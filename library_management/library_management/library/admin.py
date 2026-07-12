@@ -16,7 +16,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display_links = ['name', 'description' , 'created_at', 'updated_at']
 
 
-@admin.site.register(User, UserAdmin)
+@admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = ['first_name', 'last_name', 'phone', 'role' , 'is_active']
     ordering = ['id']
@@ -55,17 +55,17 @@ class PublisherAdmin(admin.ModelAdmin):
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ['title', 'author', 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies']
+    list_display = ['title' , 'author' , 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies']
     ordering = ['id', 'title' , 'publication_date']
     list_filter = ['title', 'author', 'publisher' , 'publication_date']
     search_fields = ['title', 'author', 'publisher']
     date_hierarchy = 'publication_date'
-    list_display_links = ['title', 'author', 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies']
+    list_display_links = ['title' , 'author' , 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies']
 
 
 @admin.register(Request)
 class RequestAdmin(admin.ModelAdmin):
-    list_display = ['user', 'book', 'request_date', 'request_type' , 'status' , 'status']
+    list_display = ['user', 'book', 'request_date', 'request_type' , 'status']
     ordering = ['id', 'request_date']
     list_filter = ['request_date']
     date_hierarchy = 'request_date'

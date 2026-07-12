@@ -1,5 +1,5 @@
-from datetime import timezone, timedelta
-
+from datetime import  timedelta
+from django.urls import reverse
 from django.db import models
 from django_jalali.db import models as jmodels
 from django.contrib.auth.models import AbstractUser
@@ -71,6 +71,7 @@ class Book(models.Model):
     title = models.CharField(max_length = 100)
     author = models.ForeignKey(Author, on_delete=models.CASCADE , related_name='books')
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE , related_name='books')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE , related_name='books')
     isbn = models.CharField(max_length = 100)
     description = models.TextField()
     publication_date = jmodels.jDateField()
@@ -83,11 +84,14 @@ class Book(models.Model):
     class Meta:
         ordering = ['-publication_date']
         indexes = [
-            models.Index(fields = ['title' , 'author' , 'publisher']),
+            models.Index(fields = ['title' , 'publisher']),
         ]
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse('book_detail', kwargs={'id':self.id})
 
 
 class Request(models.Model):
@@ -95,17 +99,17 @@ class Request(models.Model):
         RETURN = 'Rt' , 'Return'
         BORROW = 'Bro' , 'Borrow'
 
-    class status(models.TextChoices):
+    class Status(models.TextChoices):
         PENDING = 'PE' , 'Pending'
         APPROVED = 'AP' , 'Approved'
         REJECTED = 'RE' , 'Rejected'
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='requests')
+    user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='user_requests')
     book = models.ForeignKey(Book, on_delete=models.CASCADE , related_name='requests')
     request_date = jmodels.jDateField()
     request_type = models.CharField(choices=RequestType.choices, default = RequestType.BORROW , max_length=50 )
-    status = models.CharField(choices=status.choices, default = RequestType.PENDING , max_length=50 )
-    librarian = models.ForeignKey(User, on_delete=models.CASCADE , related_name='requests' , default = None)
+    status = models.CharField(choices=Status.choices, default = Status.PENDING , max_length=50 )
+    librarian = models.ForeignKey(User, on_delete=models.CASCADE , related_name='librarian_requests' , null = True , blank = True)
 
     class Meta:
         ordering = ['-request_date']
@@ -127,7 +131,7 @@ class Loan(models.Model):
     borrow_date = jmodels.jDateField()
     due_date = jmodels.jDateField()
     return_date = jmodels.jDateField(null=True , blank=True)
-    borrow_librarian = models.ForeignKey(User, on_delete=models.SET_NULL , null=True , default=jmodels.jdate.today , related_name='borrows')
+    borrow_librarian = models.ForeignKey(User, on_delete=models.SET_NULL , null=True , related_name='borrows')
     return_librarian = models.ForeignKey(User, on_delete=models.CASCADE , related_name='returns' , default = None , null=True,
     blank=True)
     status = models.CharField(choices=StatusChoices.choices, default = StatusChoices.BORROWED , max_length=50)
@@ -139,5 +143,11 @@ class Loan(models.Model):
         if self.borrow_date:
             self.due_date = self.borrow_date + timedelta(days=30)
         super().save(*args , **kwargs)
+
+class comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='comments')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE , related_name='comments')
+    text = models.TextField()
+    rating = models.PositiveSmallIntegerField()
 
 

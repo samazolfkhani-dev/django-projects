@@ -1,0 +1,15 @@
+{% extends 'parent/base.html' %}
+    {% block title %}Book-List{% endblock %}
+    {% block body %}
+        <h1>List Of Books in Horizon Library : </h1>
+        {% for book in books %}
+            <h3><a href="{% url 'library:book_detail' book.id %}">Title : {{ book.title }}</a></h3>
+            <p>Author : {{ book.author }}</p>
+            <p>Publisher : {{ book.publisher }}</p>
+            <p>Category : {{ book.category }}</p>
+            <br>
+            <hr>
+            <br>
+        {% endfor %}
+    {% include "partials/pagination.html" with page=page_obj %}
+    {% endblock %}

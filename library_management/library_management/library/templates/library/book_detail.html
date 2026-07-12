@@ -1,0 +1,15 @@
+{% extends 'parent/base.html' %}
+    {% block title %}Book-Detail{% endblock %}
+    {% block body %}
+        <h2>{{ book.title }}</h2>
+        <h4>Title : {{ book.title }}</h4>
+        <h4>Author : {{ book.author }}</h4>
+        <h4>Publisher : {{ book.publisher }}</h4>
+        <p>Category : {{ book.category }}</p>
+        <p>Summary : {{ book.description }}</p>
+        <p>ISBN : {{ book.isbn }}</p>
+        <p>Publication Date : {{ book.publication_date }}</p>
+        <p>Pages : {{ book.pages }}</p>
+        <p>Total copies : {{ book.total_copies }}</p>
+        <p>Total Available Copies : {{ book.total_available_copies }}</p>
+    {% endblock %}
