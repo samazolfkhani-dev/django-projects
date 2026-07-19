@@ -144,10 +144,32 @@ class Loan(models.Model):
             self.due_date = self.borrow_date + timedelta(days=30)
         super().save(*args , **kwargs)
 
-class comment(models.Model):
+def censor(text):
+    bad_word = ['loser']
+    for word in bad_word:
+        text = text.replace(word, '*' * len(word))
+    return text
+
+class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='comments')
     book = models.ForeignKey(Book, on_delete=models.CASCADE , related_name='comments')
     text = models.TextField()
     rating = models.PositiveSmallIntegerField()
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True , related_name = 'replies')
+    is_approved = models.BooleanField(default=False)
+    created_at = jmodels.jDateTimeField(auto_now_add=True)
+    updated_at = jmodels.jDateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} -> {self.book}'
+
+    def save(self , *args , **kwargs):
+        self.text = censor(self.text)
+        super().save(*args , **kwargs)
+
+
 
 

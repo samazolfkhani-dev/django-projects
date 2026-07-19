@@ -12,4 +12,18 @@
         <p>Pages : {{ book.pages }}</p>
         <p>Total copies : {{ book.total_copies }}</p>
         <p>Total Available Copies : {{ book.total_available_copies }}</p>
+        <hr>
+        <h4>Comments : </h4>
+        {% for comment in comments %}
+            <p>{{ comment.user }} : {{ comment.text }}</p>
+            <br>
+        {% empty %}
+            no comments!
+        {% endfor %}
+
+        <form method="post" action="{% url 'library:book_comment' book.id  user.id %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Submit">
+        </form>
     {% endblock %}

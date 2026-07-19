@@ -1,0 +1,14 @@
+{% extends 'parent\base.html' %}
+{% block title %}book comments{% endblock %}
+{% load jformat %}
+
+{% block body %}
+    {% if comment %}
+        <a href="{{ book.get_absolute_url }}">Back To The Post</a>
+    {% endif %}
+    <form method="post" action="{% url 'library:book_comments' book.id  user.id %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Add Comment">
+    </form>
+{% endblock %}
