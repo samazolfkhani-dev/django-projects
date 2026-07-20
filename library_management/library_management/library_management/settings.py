@@ -118,3 +118,13 @@ AUTH_USER_MODEL = 'library.User'
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+LOGIN_REDIRECT_URL = '/library/profile'
+LOGIN_URL = '/library/login'
+LOGOUT_REDIRECT_URL = '/library/login'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'library.authentication.PhoneAuthBackend',
+    'library.authentication.EmailAuthBackend',
+]
