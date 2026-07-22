@@ -14,4 +14,7 @@ urlpatterns = [
     path('profile/' , views.profile , name='profile'),
     path('profile/member/' , views.member_profile , name='member_profile'),
     path('profile/librarian/' , views.librarian_profile , name='librarian_profile'),
+    path('uregister/' , views.librarian_register , name = 'user_register'),
+    path('mregister/' , views.member_register , name = 'member_register'),
+    path('user_detail/' , views.user_detail , name = 'user_detail'),
 ]

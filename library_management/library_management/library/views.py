@@ -34,7 +34,7 @@ def comment(request , book_id , user_id ):
     context = {
         'user': user,
         'comment': comment,
-        'form': form,
+        'forms': form,
     }
     return render(request, 'forms/comment.html', context)
 
@@ -50,8 +50,61 @@ def profile(request):
 
 @login_required
 def member_profile(request):
-    return render(request, 'library/member_profile.html')
+    member = get_object_or_404(User , pk=request.user.id)
+    loans = Loan.object.filter(user=request.user)
+    comments = Comment.objects.filter(user=request.user)
+    context = {
+        'member': member,
+        'loans': loans,
+        'comments': comments,
+    }
+    return render(request , 'library/member_profile.html' , context)
+
+
 
 @login_required
 def librarian_profile(request):
-    return render(request, 'library/librarian_profile.html')
+    librarian = get_object_or_404(User , pk=request.user.id)
+    borrow_loans = Loan.objects.filter(borrow_librarian=request.user)
+    return_loans = Loan.objects.filter(return_librarian=request.user)
+    loans = borrow_loans or return_loans
+    comments = Comment.objects.filter(user=request.user)
+    context = {
+        'librarian': librarian,
+        'loans': loans,
+        'comments': comments,
+    }
+    return render(request , 'library/librarian_profile.html' , context)
+
+def librarian_register(request):
+    if request.method == 'POST':
+        form = LibrarianRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit = False)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            return render(request , 'registration/register_done.html' , {'user':user })
+    else :
+        form = LibrarianRegisterForm()
+    return render(request, 'forms/register.html' , {'form':form})
+
+def member_register(request):
+    if request.method == 'POST':
+        form = MemberRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit = False)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            return render(request , 'registration/register_done.html' , {'user':user })
+    else :
+        form = LibrarianRegisterForm()
+    return render(request, 'forms/register.html' , {'form':form})
+
+def user_detail(request):
+    user = get_object_or_404(User , pk=request.user.id)
+    loans = Loan.objects.filter(user=request.user)
+    context = {
+        'user': user,
+        'loans': loans,
+    }
+    return render(request , 'library/user_detail.html' , context)
