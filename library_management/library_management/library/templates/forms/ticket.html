@@ -1,0 +1,51 @@
+    <form method="post">
+        {% if sent %}
+            <h2>Your Ticket Was Successfully Sent To Supporters</h2>
+        {% endif %}
+        {% csrf_token %}
+         Name :
+        <input type="text" name="name" required {% if form.name.value %} value="{{ form.name.value }}" {% endif %}>
+        <br>
+        Email :
+        <input type="email" name="email" {% if form.email.value %} value="{{ form.email.value }}" {% endif %}>
+        <br>
+        Phone :
+        <input type="text" name="phone" required maxlength="11" {% if form.phone.value %} value="{{ form.phone.value }}" {% endif %}>
+        <br>
+        Message :
+        <textarea name="message">
+            {% if form.message.value %}
+                {{ form.message.value }}
+            {% endif %}
+        </textarea>
+        <br>
+        <select name="subject">
+            {% if form.subject.value == "suggest" %}
+                <option value="suggest" selected>Suggest</option>
+            {% else %}
+                <option value="suggest">Suggest</option>
+            {% endif %}
+
+            {% if form.subject.value == "feedback" %}
+                <option value="feedback" selected>Feedback</option>
+            {% else %}
+                <option value="feedback">Feedback</option>
+            {% endif %}
+
+            {% if form.subject.value == "report" %}
+                <option value="report" selected>Report</option>
+            {% else %}
+                <option value="report">Report</option>
+            {% endif %}
+        </select>
+
+        {% if form.errors %}
+            {% for field in form %}
+                {% for error in field.errors %}
+                    {{ field.label }} : {{ error }}
+                {% endfor %}
+            {% endfor %}
+        {% endif %}
+
+        <input type="submit" value="Submit">
+    </form>

@@ -17,4 +17,5 @@ urlpatterns = [
     path('uregister/' , views.librarian_register , name = 'user_register'),
     path('mregister/' , views.member_register , name = 'member_register'),
     path('user_detail/' , views.user_detail , name = 'user_detail'),
+    path('ticket' , views.ticket , name = 'ticket')
 ]

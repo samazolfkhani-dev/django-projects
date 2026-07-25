@@ -73,3 +73,18 @@ class MemberRegisterForm(forms.ModelForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("Email already exists!")
         return email
+
+
+class TicketForm(forms.Form):
+    message = forms.CharField(widget=forms.Textarea , required=True)
+    name = forms.CharField(max_length=100 , required=True)
+    email = forms.EmailField()
+    phone = forms.CharField(max_length=11 , required=True)
+    subject = forms.CharField()
+
+    def clean_phone(self):
+        phone = self.cleaned_data['phone']
+        if phone:
+            if not phone.isnumeric():
+                raise forms.ValidationError("Phone number must have digits!")
+        return phone

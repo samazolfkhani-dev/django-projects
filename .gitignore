@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+libenv/
+venv/
+env/
+.venv/
+
+# Database
+db.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# Media
+media/
