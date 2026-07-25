@@ -48,4 +48,11 @@
         </tr>
         {% endfor %}
         </table>
+        <br>
+        <a href="{% url 'library:password_change' %}">Change Password</a>
+        <br>
+        <br>
+        <form action="{% url 'library:logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
     {% endblock %}

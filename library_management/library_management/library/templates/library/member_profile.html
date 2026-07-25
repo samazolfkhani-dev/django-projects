@@ -48,12 +48,19 @@
         {% for comment in comments %}
         <tr>
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
-            <td style="border:2px solid orange;">
+            <td style="border:2px solid rgb(0, 255, 204);">
                 <a href="{{ loan.book.get_absolute_url }}">{{ loan.book.title }}</a>
             </td>
-            <td style="border:2px solid orange;">{{ comment.text | truncatewords:4 }}</td>
-            <td style="border:2px solid orange;">{{ comment.rating }}</td>
+            <td style="border:2px solid rgb(0, 238, 255);">{{ comment.text | truncatewords:4 }}</td>
+            <td style="border:2px solid rgb(0, 255, 221);">{{ comment.rating }}</td>
         </tr>
         {% endfor %}
     </table>
+        <br>
+        <a href="{% url 'library:password_change' %}">Change Password</a>
+        <br>
+        <br>
+        <form action="{% url 'library:logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
     {% endblock %}

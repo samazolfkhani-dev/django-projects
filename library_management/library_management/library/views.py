@@ -52,7 +52,7 @@ def profile(request):
 @login_required
 def member_profile(request):
     member = get_object_or_404(User , pk=request.user.id)
-    loans = Loan.object.filter(user=request.user)
+    loans = Loan.objects.filter(user=request.user)
     comments = Comment.objects.filter(user=request.user)
     context = {
         'member': member,

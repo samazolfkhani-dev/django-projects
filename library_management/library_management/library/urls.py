@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path , reverse_lazy
 from . import views
 from django.contrib.auth import views as auth_views
 from .forms import *
@@ -17,5 +17,7 @@ urlpatterns = [
     path('uregister/' , views.librarian_register , name = 'user_register'),
     path('mregister/' , views.member_register , name = 'member_register'),
     path('user_detail/' , views.user_detail , name = 'user_detail'),
-    path('ticket' , views.ticket , name = 'ticket')
+    path('ticket' , views.ticket , name = 'ticket'),
+    path('password_change/' , auth_views.PasswordChangeView.as_view(success_url = reverse_lazy('library:password_change_done')) , name = 'password_change'),
+    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view() , name = 'password_change_done'),
 ]
