@@ -8,4 +8,6 @@
         <input type="hidden" name="next" value="{{ next }}">
         <input type="submit" value="Enter">
     </form>
+    <br>
+    <a href="{% url 'library:password_reset' %}">Password Recovery</a>
 {% endblock %}
