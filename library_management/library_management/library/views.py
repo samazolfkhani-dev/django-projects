@@ -6,38 +6,60 @@ from .forms import *
 from django.contrib.auth.decorators import login_required
 from .models import *
 from django.core.mail import send_mail
-
+from taggit.models import Tag
+from django.db.models import Count
+from django.core.paginator import Paginator
 # Create your views here.
 
 def index(request):
     return render(request, 'library/home.html')
 
-class BookListView(ListView):
-    queryset = Book.objects.all()
-    template_name = 'library/book_list.html'
-    paginate_by = 4
-    context_object_name = 'books'
-
-class BookDetailView(DetailView):
-    model = Book
-    template_name = 'library/book_detail.html'
-
-
-def comment(request , book_id , user_id ):
-    user = get_object_or_404(User , pk=user_id)
-    book = get_object_or_404(Book , pk=book_id)
-    form = CommentForm(request.post)
-    if form.is_valid():
-        comment = form.save(commit=False)
-        comment.user = user
-        comment.book = book
-        comment.save()
+def book_list(request , tag_slug = None):
+    books = Book.objects.all()
+    tag = None
+    if tag_slug :
+        tag = get_object_or_404(Tag , slug = tag_slug)
+        books = Book.objects.filter(tags__in = [tag])
     context = {
-        'user': user,
-        'comment': comment,
-        'forms': form,
+        'books' : books ,
+        'tag' : tag ,
     }
-    return render(request, 'forms/comment.html', context)
+    return render(request , 'library/book_list.html' , context)
+
+
+def book_detail(request, id):
+    book = get_object_or_404(Book, id=id)
+    book_tags_ids = book.tags.values_list("id", flat=True)
+    similar_books = (
+        Book.objects.filter(tags__in=book_tags_ids)
+        .exclude(id=book.id)
+        .annotate(same_tags=Count("tags"))
+        .order_by("-same_tags", "-created_at")[:2])
+    comments = book.comments.all()   
+    paginator = Paginator(comments ,4)    
+    page_number = request.GET.get("page")
+    comments = paginator.get_page(page_number)
+    form = CommentForm()
+    context = {
+        "book": book,
+        "comments": comments,
+        "form": form,
+        "similar_books": similar_books,
+    }
+
+    return render(request, "library/book_detail.html", context )
+
+@login_required
+def book_comment(request, id):
+    book = get_object_or_404(Book, id=id)
+    if request.method == "POST":
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.book = book
+            comment.user = request.user
+            comment.save()
+    return redirect("library:book_detail", id=book.id)
 
 
 @login_required
@@ -124,3 +146,16 @@ def ticket(request):
     return render(
         request,'forms/ticket.html',{'form': form,'sent': sent}
     )
+
+
+@login_required()
+def add_book (request):
+    if request.method == 'POST':
+        form = CreateBookForm(request.POST)
+        if form.is_valid():
+            form.save(commit = True)
+            return redirect('library:home')
+    else :
+        form = CreateBookForm()
+    return render(request, 'forms/add_book.html' , {'form':form})
+

@@ -1,0 +1,22 @@
+{% extends 'parent/base.html' %}
+{% block title %}Add New Book{% endblock %}
+{% block body %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <br>
+        <input type="submit" value="Submit">
+    </form>
+
+    {% if form.errors %}
+        Correct The Errors!
+        <br>
+        {% for field in form %}
+            {% if field.error %}
+                {% for error in field.errors %}
+                    {{ field.label }} : {{ error }}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endblock %}

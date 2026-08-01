@@ -49,10 +49,9 @@
         <tr>
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid rgb(0, 255, 204);">
-                <a href="{{ loan.book.get_absolute_url }}">{{ loan.book.title }}</a>
+                <a href="{{ loan.book.get_absolute_url }}">{{ comment.book.title }}</a>
             </td>
-            <td style="border:2px solid rgb(0, 238, 255);">{{ comment.text | truncatewords:4 }}</td>
-            <td style="border:2px solid rgb(0, 255, 221);">{{ comment.rating }}</td>
+            <td style="border:2px solid rgb(0, 238, 255);">{{ comment.body | truncatewords:4 }}</td>
         </tr>
         {% endfor %}
     </table>

@@ -3,9 +3,18 @@ from .models import *
 from django.contrib.auth.forms import AuthenticationForm
 
 class CommentForm(forms.ModelForm):
-    class Meta:
+    def clean_body(self):
+        body = self.cleaned_data['body']
+        if body :
+            if not len(body) > 2 :
+                raise forms.ValidationError("Comment must have at least 2 letters!")
+            return body
+    class Meta :
         model = Comment
-        fields = ['user' , 'book' , 'text' , 'rating' , 'parent']
+        fields = ['body']
+        widgets = {
+            'body' : forms.Textarea(attrs={'placeholder' : 'Enter Your Comment :' , 'class' : 'comment_body'})
+        }
 
 class LoginForm(AuthenticationForm):
     username = forms.CharField(max_length=100 , required=True)
@@ -88,3 +97,9 @@ class TicketForm(forms.Form):
             if not phone.isnumeric():
                 raise forms.ValidationError("Phone number must have digits!")
         return phone
+
+
+class CreateBookForm(forms.ModelForm):
+    class Meta:
+        model = Book
+        fields = ['title' , 'author' , 'publisher' , 'category' , 'isbn' , 'description' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies' , 'tags']

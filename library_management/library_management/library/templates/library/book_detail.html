@@ -12,18 +12,46 @@
         <p>Pages : {{ book.pages }}</p>
         <p>Total copies : {{ book.total_copies }}</p>
         <p>Total Available Copies : {{ book.total_available_copies }}</p>
+        <p>Tags :   {% for tag in book.tags.all %}
+                        {{ tag.name}}
+                        {% if not forloop.last %} , {% endif %}
+                    {% endfor %} </p>
         <hr>
-        <h4>Comments : </h4>
-        {% for comment in comments %}
-            <p>{{ comment.user }} : {{ comment.text }}</p>
+<p>Comment List : </p>
+        {% for cm in comments %}
+            {{ cm.user.username }} :
+            {{ cm.body | linebreaks}}
             <br>
         {% empty %}
             no comments!
         {% endfor %}
-
-        <form method="post" action="{% url 'library:book_comment' book.id  user.id %}">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <input type="submit" value="Submit">
-        </form>
-    {% endblock %}
+{% include "partials/pagination.html" with page=comments %}
+<hr>
+{% if user.is_authenticated %}
+    <form method="post" action="{% url 'library:book_comment' book.id %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Submit">
+    </form>
+{% else %}
+    <h4>For Adding Comment You Have To Login!</h4>
+    <p><a href="{% url 'library:login' %}">Login</a></p>
+{% endif %}
+<hr>
+        <h3>Similar Books :</h3>
+            {% for book in similar_books %}
+                <a href="{{ book.get_absolute_url }}">
+                    {{ book.title }} by {{ book.author }}
+                    <br>
+                    {% for tag in book.tags.all %}
+                        {{ tag.name}}
+                        {% if not forloop.last %} , {% endif %}
+                    {% endfor %}
+                    <br>
+                    <br>
+                </a>
+            {% empty %}
+                <p>No Similar Book!</p>
+            {% endfor %}
+        <hr>
+{% endblock %}

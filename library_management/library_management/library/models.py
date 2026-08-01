@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.db import models
 from django_jalali.db import models as jmodels
 from django.contrib.auth.models import AbstractUser
+from taggit.managers import TaggableManager
+from django.core.validators import MinValueValidator , MaxValueValidator
 # Create your models here.
 
 class Category(models.Model):
@@ -83,6 +85,7 @@ class Book(models.Model):
     total_available_copies = models.IntegerField()
     created_at = jmodels.jDateTimeField(auto_now_add=True)
     updated_at = jmodels.jDateTimeField(auto_now=True)
+    tags = TaggableManager(blank = True)
 
     class Meta:
         ordering = ['-publication_date']
@@ -94,7 +97,7 @@ class Book(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('book_detail', kwargs={'id':self.id})
+        return reverse('library:book_detail', kwargs={'id':self.id})
 
 
 class Request(models.Model):
@@ -140,39 +143,36 @@ class Loan(models.Model):
     status = models.CharField(choices=StatusChoices.choices, default = StatusChoices.BORROWED , max_length=50)
 
     def __str__(self):
-        return f'{self.user} -> {self.book}'
+        return f"{self.user} -> {self.book}"
 
     def save(self , *args , **kwargs):
         if self.borrow_date:
             self.due_date = self.borrow_date + timedelta(days=30)
         super().save(*args , **kwargs)
 
-def censor(text):
-    bad_word = ['loser']
-    for word in bad_word:
-        text = text.replace(word, '*' * len(word))
+def censor_text(text):
+    bad_words = ["loser" , "sheet"]
+    for word in bad_words:
+        text = text.replace(word , "*" * len(word))
     return text
-
 class Comment(models.Model):
+    book = models.ForeignKey(Book , on_delete=models.CASCADE , related_name="comments" , verbose_name="post")
     user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='comments')
-    book = models.ForeignKey(Book, on_delete=models.CASCADE , related_name='comments')
-    text = models.TextField()
-    rating = models.PositiveSmallIntegerField()
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True , related_name = 'replies')
-    is_approved = models.BooleanField(default=False)
-    created_at = jmodels.jDateTimeField(auto_now_add=True)
-    updated_at = jmodels.jDateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f'{self.user} -> {self.book}'
+    body = models.TextField(verbose_name="message")
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def save(self , *args , **kwargs):
-        self.text = censor(self.text)
+        self.body = censor_text(self.body)
         super().save(*args , **kwargs)
 
+    class Meta :
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['-created'])
+        ]
+        verbose_name = "comment"
+        verbose_name_plural = "comments"
 
-
-
+    def __str__(self):
+        return f"{self.user.username} : {self.body}"

@@ -8,8 +8,12 @@
             <p>Publisher : {{ book.publisher }}</p>
             <p>Category : {{ book.category }}</p>
             <br>
+            {% for tag in book.tags.all %}
+                <a href="{% url 'library:book_list_by_tag' tag.slug %}">{{ tag.name }}</a>
+                {% if not forloop.last %} , {% endif %}
+            {% endfor %}
             <hr>
             <br>
         {% endfor %}
-    {% include "partials/pagination.html" with page=page_obj %}
+    {% include "partials/pagination.html" with page=posts %}
     {% endblock %}

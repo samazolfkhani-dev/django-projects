@@ -55,12 +55,18 @@ class PublisherAdmin(admin.ModelAdmin):
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ['title' , 'author' , 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies']
+    list_display = ['title' , 'author' , 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies' , 'tag_list']
     ordering = ['id', 'title' , 'publication_date']
     list_filter = ['title', 'author', 'publisher' , 'publication_date']
     search_fields = ['title', 'author', 'publisher']
     date_hierarchy = 'publication_date'
     list_display_links = ['title' , 'author' , 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('tags')
+
+    def tag_list(self , obj):
+        return ' , '.join(o.name for o in obj.tags.all())
 
 
 @admin.register(Request)
@@ -79,3 +85,9 @@ class LoanAdmin(admin.ModelAdmin):
     list_filter = ['return_date', 'status']
     date_hierarchy = 'due_date'
     list_display_links = ['user', 'book', 'borrow_date', 'return_date' , 'status']
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ['book', 'user']
+    ordering = ['id', 'created']
+    list_display_links = ['book', 'user']
