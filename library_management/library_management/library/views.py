@@ -9,6 +9,7 @@ from django.core.mail import send_mail
 from taggit.models import Tag
 from django.db.models import Count
 from django.core.paginator import Paginator
+from django.core.exceptions import PermissionDenied
 # Create your views here.
 
 def index(request):
@@ -148,14 +149,28 @@ def ticket(request):
     )
 
 
-@login_required()
-def add_book (request):
+@login_required
+def add_book(request):
+    if request.user.role != User.Role.LIBRARIAN:
+        raise PermissionDenied
+    
     if request.method == 'POST':
-        form = CreateBookForm(request.POST)
+        form = CreateBookForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save(commit = True)
-            return redirect('library:home')
-    else :
+            book = form.save()
+            images = [
+                form.cleaned_data.get('image1'),
+                form.cleaned_data.get('image2'),
+                form.cleaned_data.get('image3'),
+                form.cleaned_data.get('image4'),
+            ]
+            for image in images:
+                if image:
+                    Image.objects.create(
+                        image_file=image,
+                        book=book
+                    )
+            return redirect('library:index')
+    else:
         form = CreateBookForm()
-    return render(request, 'forms/add_book.html' , {'form':form})
-
+    return render(request,'forms/add_book.html',{'form': form})

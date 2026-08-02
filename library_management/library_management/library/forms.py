@@ -100,6 +100,10 @@ class TicketForm(forms.Form):
 
 
 class CreateBookForm(forms.ModelForm):
+    image1 = forms.ImageField(label="Image1" , required = False)
+    image2 = forms.ImageField(label="Image2" , required = False)
+    image3 = forms.ImageField(label="Image3" , required = False)
+    image4 = forms.ImageField(label="Image4" , required = False)
     class Meta:
         model = Book
         fields = ['title' , 'author' , 'publisher' , 'category' , 'isbn' , 'description' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies' , 'tags']

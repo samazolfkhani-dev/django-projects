@@ -16,6 +16,17 @@
                         {{ tag.name}}
                         {% if not forloop.last %} , {% endif %}
                     {% endfor %} </p>
+        <table>
+            <tr>
+                {% for image in book.images.all %}
+                    {% if image %}
+                    <td>
+                        <img src="{{ image.image_file.url }}" width="200" height="250">
+                    </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </table>
         <hr>
 <p>Comment List : </p>
         {% for cm in comments %}

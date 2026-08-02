@@ -52,7 +52,11 @@ class PublisherAdmin(admin.ModelAdmin):
     list_filter = ['name']
     search_fields = ['name']
     list_display_links = ['name', 'phone', 'email', 'website_url']
-
+    
+class ImageInline(admin.TabularInline):
+    model = Image
+    extra = 0
+    readonly_fields = ['title' , 'description']
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
     list_display = ['title' , 'author' , 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies' , 'tag_list']
@@ -61,7 +65,7 @@ class BookAdmin(admin.ModelAdmin):
     search_fields = ['title', 'author', 'publisher']
     date_hierarchy = 'publication_date'
     list_display_links = ['title' , 'author' , 'publisher', 'isbn' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies']
-
+    inlines = [ImageInline]
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('tags')
 

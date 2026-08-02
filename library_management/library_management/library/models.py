@@ -5,6 +5,7 @@ from django_jalali.db import models as jmodels
 from django.contrib.auth.models import AbstractUser
 from taggit.managers import TaggableManager
 from django.core.validators import MinValueValidator , MaxValueValidator
+from django_resized import ResizedImageField
 # Create your models here.
 
 class Category(models.Model):
@@ -39,6 +40,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length = 11)
     employee_code = models.CharField(max_length = 50 , unique = True , blank = True , null = True)
     role = models.CharField(choices=Role.choices, default = Role.MEMBER , max_length=10)
+    photo = ResizedImageField(upload_to='accounts_images/' , size=[500,500] , quality = 75 , crop = ['middle' , 'center'], null =True , blank = True )
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -49,7 +51,7 @@ class Author(models.Model):
     biography = models.TextField()
     birth_date = jmodels.jDateField()
     nationality = models.CharField(max_length = 50)
-
+    photo = ResizedImageField(upload_to='authors_images/' , size=[500,500] , quality = 75 , crop = ['middle' , 'center'], null =True , blank = True )
     class Meta:
         ordering = ['birth_date']
 
@@ -176,3 +178,18 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} : {self.body}"
+
+class Image(models.Model):
+    title = models.CharField(null =True , blank = True)
+    description = models.TextField(null =True , blank = True)
+    image_file = ResizedImageField(upload_to = 'book_images/' , null = True , blank = True)
+    book = models.ForeignKey(Book , on_delete = models.CASCADE , related_name = 'images')
+    created_at = models.DateTimeField(auto_now_add = True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields = ['title' , 'description' , 'id'])
+        ]
+
+    def __str__(self):
+        return self.title or "Book Image"

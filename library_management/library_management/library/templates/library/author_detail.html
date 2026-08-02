@@ -1,0 +1,14 @@
+{% extends 'parent/base.html' %}
+    {% block title %}Member Profile{% endblock %}
+    {% block body %}
+        <h2>Author Info :</h2>
+        {% if author.photo %}
+            <img src="{{ author.photo.url }}" width="250" height="250">
+        {% endif %}
+        <h4>First Name : {{ author.first_name }}</h4>
+        <h4>Last Name : {{ author.last_name }}</h4>
+        <h4>Biography : {{ author.biography }}</h4>
+        <p>Birth Date: {{ author.birth_date }}</p>
+        <p>Nationality: {{ author.nationality }}</p>
+        <p>Birth Date: {{ author.birth_date }}</p>
+    {% endblock %}
