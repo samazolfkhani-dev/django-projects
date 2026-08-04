@@ -26,5 +26,6 @@ urlpatterns = [
     path('password_reset/<uidb64>/<token>/' , auth_views.PasswordResetConfirmView.as_view(success_url = reverse_lazy('library:password_reset_complete')) , name = 'password_reset_confirm'),
     path('password_reset/complete' , auth_views.PasswordResetCompleteView.as_view() , name = 'password_reset_complete'),
     path('add_book' , views.add_book , name = 'add_book'),
-    # path('author_list/<int:id>' , views.author_detail , name = "author_detail")
+    path('author_list/<int:id>' , views.author_detail , name = "author_detail"),
+    path('author_list' , views.author_list , name = "author_list")
 ]

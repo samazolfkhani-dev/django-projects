@@ -174,3 +174,16 @@ def add_book(request):
     else:
         form = CreateBookForm()
     return render(request,'forms/add_book.html',{'form': form})
+
+
+def author_list(request):
+    authors = Author.objects.all()
+    paginator = Paginator(authors , 3)
+    page_number = request.GET.get('page' , 1)
+    authors = paginator.page(page_number)
+    return render(request , 'library/author_list.html' , {'authors' : authors})
+
+def author_detail(request , id):
+    author = get_object_or_404(Author , id = id)
+    return render(request , 'library/author_detail.html' , {'author' : author})
+
