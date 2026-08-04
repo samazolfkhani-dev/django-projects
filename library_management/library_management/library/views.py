@@ -187,3 +187,15 @@ def author_detail(request , id):
     author = get_object_or_404(Author , id = id)
     return render(request , 'library/author_detail.html' , {'author' : author})
 
+
+def publisher_list(request):
+    publishers = Publisher.objects.all()
+    paginator = Paginator(publishers , 3)
+    page_number = request.GET.get('page' , 1)
+    publishers = paginator.page(page_number)
+    return render(request , 'library/publisher_list.html' , {'publishers' : publishers})
+
+def publisher_detail(request , id):
+    publisher = get_object_or_404(Publisher , id = id)
+    return render(request , 'library/publisher_detail.html' , {'publisher' : publisher})
+

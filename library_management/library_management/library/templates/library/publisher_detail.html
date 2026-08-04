@@ -1,16 +1,15 @@
 {% extends 'parent/base.html' %}
-    {% block title %}Member Profile{% endblock %}
+    {% block title %}Publisher-Detail{% endblock %}
     {% block body %}
-        <h2>Author Info :</h2>
-        {% if author.photo %}
-            <img src="{{ author.photo.url }}" width="250" height="250">
+        <h2>Publisher Info :</h2>
+        {% if publisher.photo %}
+            <img src="{{ publisher.photo.url }}" width="250" height="250">
         {% endif %}
-        <h4>First Name : {{ author.first_name }}</h4>
-        <h4>Last Name : {{ author.last_name }}</h4>
-        <h4>Biography : {{ author.biography }}</h4>
-        <p>Birth Date: {{ author.birth_date }}</p>
-        <p>Nationality: {{ author.nationality }}</p>
-        <p>Birth Date: {{ author.birth_date }}</p>
+        <h4>Name : {{ publisher.name }}</h4>
+        <h4>Address : {{ publisher.address }}</h4>
+        <p>Email : {{ publisher.email }}</p>
+        <p>Phone : {{ publisher.phone }}</p>
+        <p>Website : {{ publisher.website }}</p>
         <hr>
         <h3>Book : </h3>
         <table style="width:50%; border-collapse: collapse;">
@@ -22,13 +21,13 @@
             <th style="border:2px solid orange;">Summary</th>
         </tr>
 
-        {% for book in author.books.all %}
+        {% for book in publisher.books.all %}
         <tr>
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid orange;">
                 <a href ="{{ book.get_absolute_url }}">{{ book.title }}</a>
             </td>
-            <td style="border:2px solid orange;"><a href="{% url 'library:publisher_detail' book.publisher.id %}">{{ book.publisher }}</a></td>
+            <td style="border:2px solid orange;"><a href="{% url 'library:author_detail' book.author.id %}">{{ book.author }}</a></td>
             <td style="border:2px solid orange;">{{ book.category }}</td>
             <td style="border:2px solid orange;">{{ book.description | truncatewords:3 }} ...</td>
             <td style="border:2px solid orange;"><a href="{{ loan.borrow_librarian.get_absolute_url }}">{{ loan.borrow_librarian }}</a></td>

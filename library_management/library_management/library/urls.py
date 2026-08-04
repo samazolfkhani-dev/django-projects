@@ -27,5 +27,7 @@ urlpatterns = [
     path('password_reset/complete' , auth_views.PasswordResetCompleteView.as_view() , name = 'password_reset_complete'),
     path('add_book' , views.add_book , name = 'add_book'),
     path('author_list/<int:id>' , views.author_detail , name = "author_detail"),
-    path('author_list' , views.author_list , name = "author_list")
+    path('author_list' , views.author_list , name = "author_list"),
+    path('publisher_list' , views.publisher_list , name = "publisher_list") , 
+    path('publisher_list/<int:id>' , views.publisher_detail , name = "publisher_detail"),
 ]

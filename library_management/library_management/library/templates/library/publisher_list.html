@@ -1,0 +1,14 @@
+{% extends 'parent/base.html' %}
+    {% block title %}Publisher-List{% endblock %}
+    {% block body %}
+        <h1>List Of Publishers in Horizon Library : </h1>
+        {% for publisher in publishers %}
+            {% if publisher.photo %}
+                <img src="{{ publisher.photo.url }}" width="250" height="250" alt="Publisher Photo">
+            {% endif %}
+            <h3><a href ="{% url 'library:publisher_detail' author.id %}" >Name : {{ publisher.name }}</a></h3>
+            <h3>Address : {{ publisher.address | truncatewords:4}}</h3>
+            <hr>
+        {% endfor %}
+    {% include "partials/pagination.html" with page=publisher %}
+    {% endblock %}

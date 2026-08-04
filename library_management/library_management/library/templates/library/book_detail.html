@@ -4,7 +4,7 @@
         <h2>{{ book.title }}</h2>
         <h4>Title : {{ book.title }}</h4>
         <h4><a href="{% url 'library:author_detail' book.author.id %}">Author : {{ book.author }}</a></h4>
-        <h4>Publisher : {{ book.publisher }}</h4>
+        <h4><a href="{% url 'library:publisher_detail' book.publisher.id %}">Publisher : {{ book.publisher }}</a></h4>
         <p>Category : {{ book.category }}</p>
         <p>Summary : {{ book.description }}</p>
         <p>ISBN : {{ book.isbn }}</p>
