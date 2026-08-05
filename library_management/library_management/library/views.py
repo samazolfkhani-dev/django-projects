@@ -199,3 +199,11 @@ def publisher_detail(request , id):
     publisher = get_object_or_404(Publisher , id = id)
     return render(request , 'library/publisher_detail.html' , {'publisher' : publisher})
 
+@login_required
+def delete_book(request , id):
+    book = get_object_or_404(Book , id = id)
+    if request.method == "POST" :
+        book.delete()
+        return redirect('library:book_list')
+    return render(request ,'forms/delete_book.html' , {'book' : book})
+

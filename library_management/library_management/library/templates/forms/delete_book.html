@@ -1,0 +1,11 @@
+{% extends 'parent/base.html' %}
+{% block title %}Register Page{% endblock %}
+{% block body %}
+    <h2>Are You Sure About Deleting {{ post.description | truncatewords:4}} ?</h2>
+    <a href="{% url 'library:book_list' %}">Back To Books</a>
+    <br>
+    <form method="post">
+        {% csrf_token %}
+        <input type="submit" value="Delete">
+    </form>
+{% endblock %}

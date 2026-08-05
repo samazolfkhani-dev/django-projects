@@ -27,6 +27,10 @@
                 {% endfor %}
             </tr>
         </table>
+        <br>
+        {% if user.role == "Li" or user.is_superiser %}
+            <a href="{% url 'library:delete_book' book.id %}">Delete Book</a>
+        {% endif %}
         <hr>
 <p>Comment List : </p>
         {% for cm in comments %}
