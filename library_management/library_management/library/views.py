@@ -10,6 +10,7 @@ from taggit.models import Tag
 from django.db.models import Count
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
+from django.contrib.postgres.search import SearchVector , SearchQuery , SearchRank , TrigramSimilarity
 # Create your views here.
 
 def index(request):
@@ -213,5 +214,21 @@ def edit_book(request , id):
     if request.method == "POST" :
         form = CreateBookForm(request.POST , request.FILES , instance = book)
         if form.is_valid():
-            
+            book = form.save()
+            images = [
+                form.cleaned_data.get('image1'),
+                form.cleaned_data.get('image2'),
+                form.cleaned_data.get('image3'),
+                form.cleaned_data.get('image4'),
+            ]
+            for image in images:
+                if image:
+                    Image.objects.create(
+                        image_file=image,
+                        book=book
+                    )
+            return redirect('library:index')
+    else:
+        form = CreateBookForm(instance = book)
+        return render(request,'forms/add_book.html',{'form': form})
 

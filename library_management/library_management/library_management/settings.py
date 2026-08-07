@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_jalali',
-    'taggit'
+    'taggit' ,
+    'django.contrib.postgres' ,
 ]
 
 MIDDLEWARE = [
