@@ -207,3 +207,11 @@ def delete_book(request , id):
         return redirect('library:book_list')
     return render(request ,'forms/delete_book.html' , {'book' : book})
 
+@login_required
+def edit_book(request , id):
+    book = get_object_or_404(Book , id = id)
+    if request.method == "POST" :
+        form = CreateBookForm(request.POST , request.FILES , instance = book)
+        if form.is_valid():
+            
+

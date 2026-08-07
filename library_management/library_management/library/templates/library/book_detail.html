@@ -30,6 +30,7 @@
         <br>
         {% if user.role == "Li" or user.is_superiser %}
             <a href="{% url 'library:delete_book' book.id %}">Delete Book</a>
+            <a href="{% url 'library:edit_book' book.id %}">Edit Book</a>
         {% endif %}
         <hr>
 <p>Comment List : </p>
