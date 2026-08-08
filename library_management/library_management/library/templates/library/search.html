@@ -1,0 +1,99 @@
+
+{% extends 'parent/base.html' %}
+
+{% block title %}Search{% endblock %}
+
+{% block body %}
+
+    {% if query %}
+
+        <h2>Results For "{{ query }}"</h2>
+
+        <hr>
+
+        <!-- ================= AUTHORS ================= -->
+
+        <h3>Authors ({{ authors.count }})</h3>
+
+        {% for author in authors %}
+
+            <h4>
+                <a href="{% url 'library:author_detail' author.id %}">
+                    {{ author.first_name }} {{ author.last_name }}
+                </a>
+            </h4>
+
+            <p>
+                {{ author.biography|truncatewords:5 }}
+            </p>
+
+            <hr>
+
+        {% empty %}
+
+            <p>No authors found!</p>
+
+        {% endfor %}
+
+
+        <!-- ================= PUBLISHERS ================= -->
+
+        <h3>Publishers ({{ publishers.count }})</h3>
+
+        {% for publisher in publishers %}
+
+            <h4>
+                {{ publisher.name }}
+            </h4>
+
+            <p>
+                {{ publisher.address|truncatewords:5 }}
+            </p>
+
+            <hr>
+
+        {% empty %}
+
+            <p>No publishers found!</p>
+
+        {% endfor %}
+
+
+        <!-- ================= BOOKS ================= -->
+
+        <h3>Books ({{ books.count }})</h3>
+
+        {% for book in books %}
+
+            <h4>
+                <a href="#">
+                    {{ book.title }}
+                </a>
+            </h4>
+
+            <p>
+                Author:
+                {{ book.author.first_name }}
+                {{ book.author.last_name }}
+            </p>
+
+            <p>
+                {{ book.description|truncatewords:5 }}
+            </p>
+
+            <hr>
+
+        {% empty %}
+
+            <p>No books found!</p>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>Enter something to search.</p>
+
+    {% endif %}
+
+{% endblock %}
+```

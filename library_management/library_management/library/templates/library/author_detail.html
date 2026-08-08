@@ -1,11 +1,6 @@
 {% extends 'parent/base.html' %}
     {% block title %}Member Profile{% endblock %}
     {% block body %}
-        <form method="get" action="{% url 'library:search_author' %}">
-            {% csrf_token %}
-            <input type="text" name="query" required placeholder="Enter Author Name ...">
-            <input type="submit" value="search">
-        </form>
         <h2>Author Info :</h2>
         {% if author.photo %}
             <img src="{{ author.photo.url }}" width="250" height="250">

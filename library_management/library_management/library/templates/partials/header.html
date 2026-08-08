@@ -1,0 +1,5 @@
+<form method="get" action="{% url 'library:search' %}">
+    {% csrf_token %}
+    <input type="text" name="query" required placeholder="Enter Word To Search ...">
+    <input type="submit" value="search">
+</form>

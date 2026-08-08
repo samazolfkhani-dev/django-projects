@@ -6,8 +6,10 @@
             <title>{% block title %}{% endblock %}</title>
             {% block header %}{% endblock %}
         </head>
+        {% include 'partials/header.html' %}
         <body>
-            {% block body %}{% endblock %}
+            {% block body %}
+            {% endblock %}
         </body>
 
     </html>

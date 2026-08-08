@@ -233,48 +233,126 @@ def edit_book(request , id):
         form = CreateBookForm(instance = book)
         return render(request,'forms/add_book.html',{'form': form})
 
-def search_book(request) :
-    query = None
-    books = []
-    if 'query' in request.GET :
-        form = SearchForm(data = request.GET)
-        if form.is_valid() :
-            query = form.cleaned_data['query']
-            search_query = SearchQuery(query)
-            vector = SearchVector('title' , weight = "A") + SearchVector('category__name' , weight = "B") +\
-                     SearchVector('description' , weight = "C") + SearchVector('tags__name' , weight = "B")
-            books = Book.objects.annotate(rank = SearchRank(vector , search_query) , 
-                                          similarity = TrigramSimilarity('title' , query) +\
-                                            TrigramSimilarity('category__name' , query) +\
-                                            TrigramSimilarity('description' , query) +\
-                                            TrigramSimilarity('tags__name' , query)).\
-                                filter(Q(rank__gte = 0.3) | Q(similarity__gte = 0.5)).\
-                                order_by('-rank' , '-similarity')
-    context = {
-        'query':query,
-        'books':books,
-    }
-    return render(request , 'library/search.html' , context )
 
-
-def search_author(request) :
+def search(request):
     query = None
     authors = []
-    if 'query' in request.GET :
-        form = SearchForm(data = request.GET)
-        if form.is_valid() :
+    publishers = []
+    books = []
+    if 'query' in request.GET:
+        form = SearchForm(data=request.GET)
+        if form.is_valid():
             query = form.cleaned_data['query']
             search_query = SearchQuery(query)
-            vector = SearchVector('first_name' , weight = "A") + SearchVector('last_name' , weight = "A") 
-            authors = Author.objects.annotate(rank = SearchRank(vector , search_query) , 
-                                          similarity = TrigramSimilarity('first_name' , query) +\
-                                            TrigramSimilarity('last_name' , query)).\
-                                filter(Q(rank__gte = 0.3) | Q(similarity__gte = 0.5)).\
-                                order_by('-rank' , '-similarity')
-    context = {
-        'query':query,
-        'authors':authors,
-    }
-    return render(request , 'library/author_search.html' , context )
+            # author_search
+            author_vector = (SearchVector('first_name', weight='A') +SearchVector('last_name', weight='A') +\
+                             SearchVector('biography', weight='B') + SearchVector('nationality', weight='C'))
+            authors = Author.objects.annotate(rank=SearchRank(author_vector,search_query),similarity=(TrigramSimilarity('first_name', query) +\
+                        TrigramSimilarity('last_name', query))).filter(Q(rank__gte=0.3) | Q(similarity__gte=0.5)).order_by('-rank','-similarity')
+            # publisher_search
+            publisher_vector = (SearchVector('name', weight='A') + SearchVector('address', weight='B') + SearchVector('email', weight='C'))
+            publishers = Publisher.objects.annotate(rank=SearchRank(publisher_vector,search_query),\
+                                                     similarity=TrigramSimilarity('name',query)).\
+                                                        filter(Q(rank__gte=0.3) |Q(similarity__gte=0.5)).\
+                                                            order_by('-rank','-similarity')
+            # book_search
+            book_vector = (
+                SearchVector(
+                    'title',
+                    weight='A'
+                ) +
 
+                SearchVector(
+                    'author__first_name',
+                    weight='A'
+                ) +
+
+                SearchVector(
+                    'author__last_name',
+                    weight='A'
+                ) +
+
+                SearchVector(
+                    'publisher__name',
+                    weight='B'
+                ) +
+
+                SearchVector(
+                    'isbn',
+                    weight='B'
+                ) +
+
+                SearchVector(
+                    'description',
+                    weight='C'
+                )
+            )
+
+            books = (
+                Book.objects
+
+                .annotate(
+                    rank=SearchRank(
+                        book_vector,
+                        search_query
+                    ),
+
+                    similarity=(
+                        TrigramSimilarity(
+                            'title',
+                            query
+                        )
+
+                        +
+
+                        TrigramSimilarity(
+                            'author__first_name',
+                            query
+                        )
+
+                        +
+
+                        TrigramSimilarity(
+                            'author__last_name',
+                            query
+                        )
+
+                        +
+
+                        TrigramSimilarity(
+                            'publisher__name',
+                            query
+                        )
+                    )
+                )
+
+                .filter(
+                    Q(rank__gte=0.3) |
+                    Q(similarity__gte=0.5)
+                )
+
+                .select_related(
+                    'author',
+                    'publisher',
+                    'category'
+                )
+
+                .order_by(
+                    '-rank',
+                    '-similarity'
+                )
+            )
+
+    context = {
+        'query': query,
+        'authors': authors,
+        'publishers': publishers,
+        'books': books,
+    }
+
+    return render(
+        request,
+        'library/search.html',
+        context
+    )
 
