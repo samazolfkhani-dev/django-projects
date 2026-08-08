@@ -1,6 +1,11 @@
 {% extends 'parent/base.html' %}
     {% block title %}Book-List{% endblock %}
     {% block body %}
+        <form method="get" action="{% url 'library:search_book' %}">
+            {% csrf_token %}
+            <input type="text" name="query" required placeholder="Enter Book Info ...">
+            <input type="submit" value="search">
+        </form>
         <h1>List Of Books in Horizon Library : </h1>
         {% for book in books %}
             {% if book.images.first %}

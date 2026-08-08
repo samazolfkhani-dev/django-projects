@@ -10,6 +10,7 @@ from taggit.models import Tag
 from django.db.models import Count
 from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.contrib.postgres.search import SearchVector , SearchQuery , SearchRank , TrigramSimilarity
 # Create your views here.
 
@@ -231,4 +232,27 @@ def edit_book(request , id):
     else:
         form = CreateBookForm(instance = book)
         return render(request,'forms/add_book.html',{'form': form})
+
+def search_book(request) :
+    query = None
+    books = []
+    if 'query' in request.GET :
+        form = SearchForm(data = request.GET)
+        if form.is_valid() :
+            query = form.cleaned_data['query']
+            search_query = SearchQuery(query)
+            vector = SearchVector('title' , weight = "A") + SearchVector('category__name' , weight = "B") +\
+                     SearchVector('description' , weight = "C") + SearchVector('tags__name' , weight = "B")
+            books = Book.objects.annotate(rank = SearchRank(vector , search_query) , 
+                                          similarity = TrigramSimilarity('title' , query) +\
+                                            TrigramSimilarity('category__name' , query) +\
+                                            TrigramSimilarity('description' , query) +\
+                                            TrigramSimilarity('tags__name' , query)).\
+                                filter(Q(rank__gte = 0.3) | Q(similarity__gte = 0.5)).\
+                                order_by('-rank' , '-similarity')
+    context = {
+        'query':query,
+        'books':books,
+    }
+    return render(request , 'library/search.html' , context )
 

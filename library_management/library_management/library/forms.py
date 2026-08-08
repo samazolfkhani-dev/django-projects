@@ -107,3 +107,6 @@ class CreateBookForm(forms.ModelForm):
     class Meta:
         model = Book
         fields = ['title' , 'author' , 'publisher' , 'category' , 'isbn' , 'description' , 'publication_date' , 'pages' , 'total_copies' , 'total_available_copies' , 'tags']
+
+class SearchForm(forms.Form) :
+    query = forms.CharField()
