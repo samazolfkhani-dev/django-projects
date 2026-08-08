@@ -256,3 +256,25 @@ def search_book(request) :
     }
     return render(request , 'library/search.html' , context )
 
+
+def search_author(request) :
+    query = None
+    authors = []
+    if 'query' in request.GET :
+        form = SearchForm(data = request.GET)
+        if form.is_valid() :
+            query = form.cleaned_data['query']
+            search_query = SearchQuery(query)
+            vector = SearchVector('first_name' , weight = "A") + SearchVector('last_name' , weight = "A") 
+            authors = Author.objects.annotate(rank = SearchRank(vector , search_query) , 
+                                          similarity = TrigramSimilarity('first_name' , query) +\
+                                            TrigramSimilarity('last_name' , query)).\
+                                filter(Q(rank__gte = 0.3) | Q(similarity__gte = 0.5)).\
+                                order_by('-rank' , '-similarity')
+    context = {
+        'query':query,
+        'authors':authors,
+    }
+    return render(request , 'library/author_search.html' , context )
+
+

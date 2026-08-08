@@ -1,6 +1,11 @@
 {% extends 'parent/base.html' %}
     {% block title %}Author-List{% endblock %}
     {% block body %}
+        <form method="get" action="{% url 'library:search_author' %}">
+            {% csrf_token %}
+            <input type="text" name="query" required placeholder="Enter Author Name ...">
+            <input type="submit" value="search">
+        </form>
         <h1>List Of Authors in Horizon Library : </h1>
         {% for author in authors %}
             {% if autor.photo%}
