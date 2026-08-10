@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse , JsonResponse
 from django.shortcuts import render , redirect
 from django.views.generic import ListView , DetailView
 from django.shortcuts import get_object_or_404
@@ -12,6 +12,7 @@ from django.core.paginator import Paginator
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.contrib.postgres.search import SearchVector , SearchQuery , SearchRank , TrigramSimilarity
+from django.views.decorators.http import require_POST
 # Create your views here.
 
 def index(request):
@@ -257,35 +258,9 @@ def search(request):
                                                             order_by('-rank','-similarity')
             # book_search
             book_vector = (
-                SearchVector(
-                    'title',
-                    weight='A'
-                ) +
-
-                SearchVector(
-                    'author__first_name',
-                    weight='A'
-                ) +
-
-                SearchVector(
-                    'author__last_name',
-                    weight='A'
-                ) +
-
-                SearchVector(
-                    'publisher__name',
-                    weight='B'
-                ) +
-
-                SearchVector(
-                    'isbn',
-                    weight='B'
-                ) +
-
-                SearchVector(
-                    'description',
-                    weight='C'
-                )
+                SearchVector( 'title', weight='A') +SearchVector('author__first_name',weight='A') +\
+                SearchVector('author__last_name',weight='A') + SearchVector('publisher__name',weight='B') +\
+                SearchVector('isbn',weight='B') + SearchVector('description',weight='C')
             )
 
             books = (
@@ -356,3 +331,26 @@ def search(request):
         context
     )
 
+@login_required
+@require_POST
+def book_like(request):
+    book_id = request.POST.get('book_id')
+    if book_id is not None :
+        book = get_object_or_404(Book , id = book_id)
+        user = request.user
+
+        if user in book.likes.all():
+            book.likes.remove(user)
+            liked = False
+        else :
+            book.likes.add(user)
+            liked = True
+        book_likes_count = book.likes.count()
+        response_data ={
+            'liked' : liked ,
+            'likes_count' : book_likes_count
+        }
+    else :
+        response_data = {'error' : 'Invalid Book Id!'}
+
+    return JsonResponse(response_data)

@@ -1,21 +1,45 @@
 {% extends 'parent/base.html' %}
     {% block title %}Book-Detail{% endblock %}
     {% block body %}
-        <h2>{{ book.title }}</h2>
-        <h4>Title : {{ book.title }}</h4>
-        <h4><a href="{% url 'library:author_detail' book.author.id %}">Author : {{ book.author }}</a></h4>
-        <h4><a href="{% url 'library:publisher_detail' book.publisher.id %}">Publisher : {{ book.publisher }}</a></h4>
-        <p>Category : {{ book.category }}</p>
-        <p>Summary : {{ book.description }}</p>
-        <p>ISBN : {{ book.isbn }}</p>
-        <p>Publication Date : {{ book.publication_date }}</p>
-        <p>Pages : {{ book.pages }}</p>
-        <p>Total copies : {{ book.total_copies }}</p>
-        <p>Total Available Copies : {{ book.total_available_copies }}</p>
-        <p>Tags :   {% for tag in book.tags.all %}
-                        {{ tag.name}}
-                        {% if not forloop.last %} , {% endif %}
-                    {% endfor %} </p>
+    <div class="book" data-book-id="{{ book.id }}">
+    <h2>{{ book.title }}</h2>
+    <h4>Title : {{ book.title }}</h4>
+    <h4>
+        <a href="{% url 'library:author_detail' book.author.id %}">
+            Author : {{ book.author }}
+        </a>
+    </h4>
+    <h4>
+        <a href="{% url 'library:publisher_detail' book.publisher.id %}">
+            Publisher : {{ book.publisher }}
+        </a>
+    </h4>
+    <p>Category : {{ book.category }}</p>
+    <p>Summary : {{ book.description }}</p>
+    <p>ISBN : {{ book.isbn }}</p>
+    <p>Publication Date : {{ book.publication_date }}</p>
+    <p>Pages : {{ book.pages }}</p>
+    <p>Total copies : {{ book.total_copies }}</p>
+    <p>Total Available Copies : {{ book.total_available_copies }}</p>
+    <p>
+        Tags :
+        {% for tag in book.tags.all %}
+            {{ tag.name }}
+            {% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+    <br>
+    <button class="like-button">
+        {% if request.user in book.likes.all %}
+            Unlike
+        {% else %}
+            Like
+        {% endif %}
+    </button>
+    <span class="likes-count">
+        {{ book.likes.count }}
+    </span>
+</div>
         <table>
             <tr>
                 {% for image in book.images.all %}
@@ -71,4 +95,33 @@
                 <p>No Similar Book!</p>
             {% endfor %}
         <hr>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.like-button').click(function() {
+        var button = $(this);
+        var book = button.closest('.book');
+        var book_id = book.data('book-id');
+        var likesCount = book.find('.likes-count');
+        var csrf = '{{ csrf_token }}';
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'library:book_like' %}",
+            data: {
+                'book_id': book_id,
+                'csrfmiddlewaretoken': csrf
+            },
+            success: function(data) {
+                if (data.liked) {
+                    button.text('Unlike');
+                } else {
+                    button.text('Like');
+                }
+                likesCount.text(data.likes_count);
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

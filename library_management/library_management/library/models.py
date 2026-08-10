@@ -89,6 +89,7 @@ class Book(models.Model):
     created_at = jmodels.jDateTimeField(auto_now_add=True)
     updated_at = jmodels.jDateTimeField(auto_now=True)
     tags = TaggableManager(blank = True)
+    likes = models.ManyToManyField(User , related_name = "liked_books" , blank = True)
 
     class Meta:
         ordering = ['-publication_date']
