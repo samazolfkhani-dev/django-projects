@@ -51,6 +51,7 @@ class Author(models.Model):
     biography = models.TextField()
     birth_date = jmodels.jDateField()
     nationality = models.CharField(max_length = 50)
+    likes = models.ManyToManyField(User , related_name = "liked_authors" , blank = True)
     photo = ResizedImageField(upload_to='authors_images/' , size=[500,500] , quality = 75 , crop = ['middle' , 'center'], null =True , blank = True )
     class Meta:
         ordering = ['birth_date']

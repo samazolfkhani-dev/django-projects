@@ -354,3 +354,28 @@ def book_like(request):
         response_data = {'error' : 'Invalid Book Id!'}
 
     return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
+def author_like(request):
+    author_id = request.POST.get('author_id')
+    if author_id is not None :
+        author = get_object_or_404(Author , id = author_id)
+        user = request.user
+
+        if user in author.likes.all():
+            author.likes.remove(user)
+            liked = False
+        else :
+            author.likes.add(user)
+            liked = True
+        author_likes_count = author.likes.count()
+        response_data ={
+            'liked' : liked ,
+            'likes_count' : author_likes_count
+        }
+    else :
+        response_data = {'error' : 'Invalid Book Id!'}
+
+    return JsonResponse(response_data)
