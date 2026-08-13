@@ -1,7 +1,8 @@
 {% extends 'parent/base.html' %}
     {% block title %}Author-List{% endblock %}
     {% block body %}
-        <h1>List Of Authors in Horizon Library : </h1>
+    <h1>List Of Authors in Horizon Library : </h1>
+    <div class="author">
         {% for author in authors %}
             {% if autor.photo%}
                 <img src="{{ autor.photo.url }}" width="250" height="250" alt="Author Photo">
@@ -10,5 +11,31 @@
             <h3>Bio : {{ author.biography | truncatewords:4}}</h3>
             <hr>
         {% endfor %}
-    {% include "partials/pagination.html" with page=authors %}
+    </div>
+    <button id="load-more">Load More</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function(){
+        var page = 2;
+        $('#load-more').click(function(){
+        $.ajax({
+            type: 'GET',
+            url: "{% url 'library:author_list' %}" + "?page=" + page ,
+            data: {
+                "page" : page,
+                "ajax" : true,
+            },
+            dataType : 'html',
+
+            success: function(data){
+                $(".author").append(data)
+                page += 1
+            }
+            
+        });
+    });
+});
+</script>
+
     {% endblock %}

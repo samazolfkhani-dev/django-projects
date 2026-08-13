@@ -1,6 +1,7 @@
 {% extends 'parent/base.html' %}
     {% block title %}Publisher-Detail{% endblock %}
     {% block body %}
+    <div class="publisher" data-publisher-id="{{ publisher.id}}">
         <h2>Publisher Info :</h2>
         {% if publisher.photo %}
             <img src="{{ publisher.photo.url }}" width="250" height="250">
@@ -10,6 +11,17 @@
         <p>Email : {{ publisher.email }}</p>
         <p>Phone : {{ publisher.phone }}</p>
         <p>Website : {{ publisher.website }}</p>
+        <button class="like-button">
+            {% if request.user in book.likes.all %}
+                Unlike
+            {% else %}
+                Like
+            {% endif %}
+        </button>
+        <span class="likes-count">
+            {{ book.likes.count }}
+        </span>
+    </div>
         <hr>
         <h3>Book : </h3>
         <table style="width:50%; border-collapse: collapse;">
@@ -33,4 +45,33 @@
             <td style="border:2px solid orange;"><a href="{{ loan.borrow_librarian.get_absolute_url }}">{{ loan.borrow_librarian }}</a></td>
         {% endfor %}
     </table>
-    {% endblock %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.like-button').click(function() {
+        var button = $(this);
+        var publisher = button.closest('.publisher');
+        var publisher_id = publisher.data('publisher-id');
+        var likesCount = publisher.find('.likes-count');
+        var csrf = '{{ csrf_token }}';
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'library:publisher_like' %}",
+            data: {
+                'publisher_id': publisher_id,
+                'csrfmiddlewaretoken': csrf
+            },
+            success: function(data) {
+                if (data.liked) {
+                    button.text('Unlike');
+                } else {
+                    button.text('Like');
+                }
+                likesCount.text(data.likes_count);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

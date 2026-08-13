@@ -71,6 +71,7 @@ class Publisher(models.Model):
     website_url = models.CharField(max_length = 100 , blank = True , null = True)
     created_at = jmodels.jDateTimeField(auto_now_add=True)
     updated_at = jmodels.jDateTimeField(auto_now=True)
+    likes = models.ManyToManyField(User , related_name = "liked_publishers" , blank = True)
     photo = ResizedImageField(upload_to='publishers_images/' , size=[500,500] , quality = 75 , crop = ['middle' , 'center'], null =True , blank = True )
 
     def __str__(self):

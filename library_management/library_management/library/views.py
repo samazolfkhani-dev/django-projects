@@ -8,7 +8,7 @@ from .models import *
 from django.core.mail import send_mail
 from taggit.models import Tag
 from django.db.models import Count
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator , EmptyPage , PageNotAnInteger
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.contrib.postgres.search import SearchVector , SearchQuery , SearchRank , TrigramSimilarity
@@ -180,10 +180,19 @@ def add_book(request):
 
 
 def author_list(request):
+    print("1")
     authors = Author.objects.all()
+    page = request.GET.get('page')
     paginator = Paginator(authors , 3)
-    page_number = request.GET.get('page' , 1)
-    authors = paginator.page(page_number)
+    try :
+        authors = paginator.page(page)
+    except PageNotAnInteger :
+        authors = paginator.page(1)
+    except EmptyPage :
+        authors = []
+    if request.GET.get('ajax'):
+        print(":)))))")
+        return render(request , 'library/author_list_ajax.html' , {'authors' : authors})
     return render(request , 'library/author_list.html' , {'authors' : authors})
 
 def author_detail(request , id):
@@ -374,6 +383,31 @@ def author_like(request):
         response_data ={
             'liked' : liked ,
             'likes_count' : author_likes_count
+        }
+    else :
+        response_data = {'error' : 'Invalid Book Id!'}
+
+    return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
+def publisher_like(request):
+    publisher_id = request.POST.get('publisher_id')
+    if publisher_id is not None :
+        publisher = get_object_or_404(Publisher , id = publisher_id)
+        user = request.user
+
+        if user in publisher.likes.all():
+            publisher.likes.remove(user)
+            liked = False
+        else :
+            publisher.likes.add(user)
+            liked = True
+        publisher_likes_count = publisher.likes.count()
+        response_data ={
+            'liked' : liked ,
+            'likes_count' : publisher_likes_count
         }
     else :
         response_data = {'error' : 'Invalid Book Id!'}

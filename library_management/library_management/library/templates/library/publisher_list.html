@@ -6,7 +6,7 @@
             {% if publisher.photo %}
                 <img src="{{ publisher.photo.url }}" width="250" height="250" alt="Publisher Photo">
             {% endif %}
-            <h3><a href ="{% url 'library:publisher_detail' author.id %}" >Name : {{ publisher.name }}</a></h3>
+            <h3><a href ="{% url 'library:publisher_detail' publisher.id %}" >Name : {{ publisher.name }}</a></h3>
             <h3>Address : {{ publisher.address | truncatewords:4}}</h3>
             <hr>
         {% endfor %}

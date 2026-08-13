@@ -34,5 +34,6 @@ urlpatterns = [
     path('edit_book/<int:id>' , views.edit_book , name = "edit_book") ,
     path('search_book/' , views.search , name = "search"),
     path('book_likes/' , views.book_like , name = "book_like") ,
-    path('author_likes/' , views.author_like , name = "author_like")
+    path('author_likes/' , views.author_like , name = "author_like") ,
+    path('publisher_likes/' , views.publisher_like , name = "publisher_like") ,
 ]

@@ -1,0 +1,8 @@
+        {% for author in authors %}
+            {% if autor.photo%}
+                <img src="{{ autor.photo.url }}" width="250" height="250" alt="Author Photo">
+            {% endif %}
+            <h3><a href ="{% url 'library:author_detail' author.id %}" >Name : {{ author.first_name }} {{ author.last_name }}</a></h3>
+            <h3>Bio : {{ author.biography | truncatewords:4}}</h3>
+            <hr>
+        {% endfor %}
