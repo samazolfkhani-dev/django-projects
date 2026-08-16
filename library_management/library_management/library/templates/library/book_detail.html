@@ -29,6 +29,11 @@
         {% endfor %}
     </p>
     <br>
+    {% if book.total_available_copies > 0 %}
+        <button class="loan">Loan</button>
+    {% else %}
+        <p>Not Available</p>
+    {% endif %}
     <button class="like-button">
         {% if request.user in book.likes.all %}
             Unlike
@@ -120,6 +125,33 @@ $(document).ready(function() {
                 }
                 likesCount.text(data.likes_count);
             }
+        });
+    });
+    $('.loan').click(function(){
+        var button = $(this)
+        var book = button.closest('.book')
+        var book_id = book.data('book-id')
+        $.ajax({
+            type: "POST" ,
+            url: "{% url 'library:book_request' %}" ,
+            data: {
+                'book_id': book_id ,
+                'csrfmiddlewaretoken' : '{{ csrf_token }}'
+            },
+
+            success: function(data){
+                if (data.success) {
+                    button.text('In Progress');
+                    button.prop('disabled' , true)
+                }
+                else {
+                    alert(data.message)
+                }
+            },
+
+            error : function(error){
+                console.log(error)
+            },
         });
     });
 });

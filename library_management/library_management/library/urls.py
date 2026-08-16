@@ -36,4 +36,7 @@ urlpatterns = [
     path('book_likes/' , views.book_like , name = "book_like") ,
     path('author_likes/' , views.author_like , name = "author_like") ,
     path('publisher_likes/' , views.publisher_like , name = "publisher_like") ,
+    path('book_request/' , views.book_request , name = "book_request") ,
+    path('request_list/' , views.request_list , name = "request_list") ,
+    path('borrow_book/' , views.borrow_book , name = "borrow_book") ,
 ]

@@ -110,3 +110,8 @@ class CreateBookForm(forms.ModelForm):
 
 class SearchForm(forms.Form) :
     query = forms.CharField()
+
+class RequestForm(forms.ModelForm):
+    class Meta:
+        model = Request 
+        fields = []

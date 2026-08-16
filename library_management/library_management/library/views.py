@@ -413,3 +413,45 @@ def publisher_like(request):
         response_data = {'error' : 'Invalid Book Id!'}
 
     return JsonResponse(response_data)
+
+def book_request(request):
+    if request.method == "POST" :
+        book_id = request.POST.get('book_id')
+        book = get_object_or_404(Book , id = book_id)
+        already_request = Request.objects.filter(user = request.user , book = book , request_type = Request.RequestType.BORROW).exists()
+        if already_request :
+            return JsonResponse({
+                'success' : False ,
+                'message' : 'You Already Have A Pending Request!'
+            })
+        if not request.user.active :
+            return JsonResponse({
+               'success' : False ,
+                'message' : 'You Are Disabled By Admin Of Site!'
+            })
+        Request.objects.create(user = request.user , book = book , request_type = Request.RequestType.BORROW)
+        return JsonResponse({
+            'success' : True
+        })
+    return JsonResponse({
+        'success' : False
+    })
+
+@login_required
+def request_list(request):
+    if request.user.role == User.Role.LIBRARIAN:
+        borrow_requests = Request.objects.filter(request_type = Request.RequestType.BORROW)
+        return_requests = Request.objects.filter(request_type = Request.RequestType.RETURN)
+        context ={
+            'borrow_request' : borrow_requests ,
+            'return_request' : return_requests
+        }
+        return render(request , 'library/request.html' , context = context)
+    else :
+        raise PermissionDenied("Access Denied!")
+
+
+def borrow_book(request) :
+    request_id = request.POST.get('request_id')
+    if request_id is not None:
+        r = get_object_or_404(Request , id = request_id)

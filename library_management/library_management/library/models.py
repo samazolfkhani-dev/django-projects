@@ -41,7 +41,7 @@ class User(AbstractUser):
     employee_code = models.CharField(max_length = 50 , unique = True , blank = True , null = True)
     role = models.CharField(choices=Role.choices, default = Role.MEMBER , max_length=10)
     photo = ResizedImageField(upload_to='accounts_images/' , size=[500,500] , quality = 75 , crop = ['middle' , 'center'], null =True , blank = True )
-
+    book_requests = models.ManyToManyField("Book" , through = "Request" , related_name = "user_requests" , through_fields = ("user", "book"))
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
 
@@ -92,6 +92,7 @@ class Book(models.Model):
     updated_at = jmodels.jDateTimeField(auto_now=True)
     tags = TaggableManager(blank = True)
     likes = models.ManyToManyField(User , related_name = "liked_books" , blank = True)
+    loans = models.ManyToManyField(User , through = "Loan" , through_fields=['book' , 'user'] , related_name = "user_loans")
 
     class Meta:
         ordering = ['-publication_date']
@@ -118,7 +119,7 @@ class Request(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='user_requests')
     book = models.ForeignKey(Book, on_delete=models.CASCADE , related_name='requests')
-    request_date = jmodels.jDateField()
+    request_date = jmodels.jDateField(auto_now_add = True)
     request_type = models.CharField(choices=RequestType.choices, default = RequestType.BORROW , max_length=50 )
     status = models.CharField(choices=Status.choices, default = Status.PENDING , max_length=50 )
     librarian = models.ForeignKey(User, on_delete=models.CASCADE , related_name='librarian_requests' , null = True , blank = True)

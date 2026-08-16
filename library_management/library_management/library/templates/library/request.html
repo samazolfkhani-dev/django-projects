@@ -1,0 +1,74 @@
+{% extends 'parent/base.html' %}
+{% block title %}Search{% endblock %}
+{% block body %}
+    <h2>Request For Borrowing: </h2>
+    <table style="width:50%; border-collapse: collapse;">
+        <tr>
+            <th style="border:2px solid orange;">Row</th>
+            <th style="border:2px solid orange;">Username</th>
+            <th style="border:2px solid orange;">Book Name</th>
+            <th style="border:2px solid orange;">Request Date</th>
+            <th style="border:2px solid orange;">Request Type</th>
+            <th style="border:2px solid orange;">Borrow</th>
+        </tr>
+
+        {% for request in borrow_request %}
+        <tr>
+            <td style="border:2px solid orange;">{{ forloop.counter }}</td>
+            <td style="border:2px solid orange;">
+                {{ request.user.username }}</a>
+            </td>
+            <td style="border:2px solid orange;"><a href="{{ request.book.get_absolute_url }}">{{ request.book.title }}</a></td>
+            <td style="border:2px solid orange;">{{ request.request_date}}</td>
+            <td style="border:2px solid orange;">{{ request.request_type}}</td>
+            <td style="border:2px solid orange;"><button class="borrow" data-request-id="{{ request.id }}">Accept</button></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <hr>
+    <h2>Request For Returning: </h2>
+    <table style="width:50%; border-collapse: collapse;">
+        <tr>
+            <th style="border:2px solid orange;">Row</th>
+            <th style="border:2px solid orange;">Username</th>
+            <th style="border:2px solid orange;">Book Name</th>
+            <th style="border:2px solid orange;">Request Date</th>
+            <th style="border:2px solid orange;">Request Type</th>
+            <th style="border:2px solid orange;">Return</th>
+        </tr>
+
+        {% for request in return_request %}
+        <tr>
+            <td style="border:2px solid orange;">{{ forloop.counter }}</td>
+            <td style="border:2px solid orange;">
+                {{ request.user.username }}</a>
+            </td>
+            <td style="border:2px solid orange;"><a href="{{ request.book.get_absolute_url }}">{{ request.book.title }}</a></td>
+            <td style="border:2px solid orange;">{{ request.request_date}}</td>
+            <td style="border:2px solid orange;">{{ request.request_type}}</td>
+            <td style="border:2px solid orange;"><button class="return" data-request-id="{{ request.id }}">Accept</button></td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $('.borrow').click(function(){
+            var request_id = $(this).data('request-id')
+            $.ajax({
+                type: 'POST' ,
+                url: "{% url 'library:accept_borrow_request' %}" ,
+                data : {
+                    'request_id': request_id ,
+                    'csrfmiddlewaretoken' : "{{ csrf_token }}"
+                } ,
+                
+                success: function(data){
+                    pass
+                }
+            })
+        });
+    });
+</script>
