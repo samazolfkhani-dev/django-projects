@@ -414,6 +414,7 @@ def publisher_like(request):
 
     return JsonResponse(response_data)
 
+@login_required
 def book_request(request):
     if request.method == "POST" :
         book_id = request.POST.get('book_id')
@@ -440,8 +441,8 @@ def book_request(request):
 @login_required
 def request_list(request):
     if request.user.role == User.Role.LIBRARIAN:
-        borrow_requests = Request.objects.filter(request_type = Request.RequestType.BORROW)
-        return_requests = Request.objects.filter(request_type = Request.RequestType.RETURN)
+        borrow_requests = Request.objects.filter(request_type = Request.RequestType.BORROW , status = Request.Status.PENDING)
+        return_requests = Request.objects.filter(request_type = Request.RequestType.RETURN , status = Request.Status.PENDING)
         context ={
             'borrow_request' : borrow_requests ,
             'return_request' : return_requests
@@ -450,8 +451,40 @@ def request_list(request):
     else :
         raise PermissionDenied("Access Denied!")
 
-
+@require_POST
+@login_required
 def borrow_book(request) :
-    request_id = request.POST.get('request_id')
-    if request_id is not None:
-        r = get_object_or_404(Request , id = request_id)
+    if request.user.role == User.Role.LIBRARIAN :
+        librarian = request.user
+        request_id = request.POST.get('request_id')
+        if request_id is None:
+            return JsonResponse({'success' : False , 'error' : 'No Such Request!'})
+        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.BORROW)
+        book = r.book
+        if book.total_available_copies <= 0 :
+                return JsonResponse({'success' : False , 'error' : 'This Book Is Not Available!'})
+        loan = Loan.objects.create(user = r.user , book = r.book , borrow_librarian = librarian , status = Loan.StatusChoices.BORROWED)
+        book.total_available_copies -= 1
+        book.save(update_fields=['total_available_copies'])
+        r.status = Request.Status.APPROVED
+        r.librarian = librarian
+        r.save(update_fields=['status' , 'librarian'])
+        return JsonResponse({'success' : True})
+    else :
+        raise PermissionDenied('Access Denied!')
+
+@require_POST
+@login_required
+def reject_borrow(request):
+    if request.user.role == User.Role.LIBRARIAN :
+        librarian = request.user
+        request_id = request.POST.get('request_id')
+        if request_id is None:
+            return JsonResponse({'success' : False , 'error' : 'No Such Request!'})
+        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.BORROW)
+        r.status = Request.Status.REJECTED
+        r.librarian = librarian
+        r.save(update_fields=['status' , 'librarian'])
+        return JsonResponse({'success' : True})
+    else :
+        raise PermissionDenied('Access Denied!')

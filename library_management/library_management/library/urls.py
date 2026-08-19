@@ -39,4 +39,5 @@ urlpatterns = [
     path('book_request/' , views.book_request , name = "book_request") ,
     path('request_list/' , views.request_list , name = "request_list") ,
     path('borrow_book/' , views.borrow_book , name = "borrow_book") ,
+    path('reject_borrow/' , views.reject_borrow , name = 'reject_borrow'),
 ]

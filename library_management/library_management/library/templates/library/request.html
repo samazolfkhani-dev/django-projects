@@ -13,7 +13,7 @@
         </tr>
 
         {% for request in borrow_request %}
-        <tr>
+        <tr id="request-{{ request.id }}">
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid orange;">
                 {{ request.user.username }}</a>
@@ -21,7 +21,15 @@
             <td style="border:2px solid orange;"><a href="{{ request.book.get_absolute_url }}">{{ request.book.title }}</a></td>
             <td style="border:2px solid orange;">{{ request.request_date}}</td>
             <td style="border:2px solid orange;">{{ request.request_type}}</td>
-            <td style="border:2px solid orange;"><button class="borrow" data-request-id="{{ request.id }}">Accept</button></td>
+            <td style="border:2px solid orange;">
+                <button class="accept-borrow" data-request-id="{{ request.id }}">
+                    Accept
+                </button>
+
+                <button class="reject-borrow" data-request-id="{{ request.id }}">
+                    Reject
+                </button>
+            </td>
         </tr>
         {% endfor %}
     </table>
@@ -46,29 +54,59 @@
             <td style="border:2px solid orange;"><a href="{{ request.book.get_absolute_url }}">{{ request.book.title }}</a></td>
             <td style="border:2px solid orange;">{{ request.request_date}}</td>
             <td style="border:2px solid orange;">{{ request.request_type}}</td>
-            <td style="border:2px solid orange;"><button class="return" data-request-id="{{ request.id }}">Accept</button></td>
+            <td style="border:2px solid orange;">
+                <button class="accept-return" data-request-id="{{ request.id }}">
+                    Accept
+                </button>
+            </td>
         </tr>
         {% endfor %}
     </table>
-{% endblock %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
     $(document).ready(function(){
-        $('.borrow').click(function(){
+        $('.accept-borrow').click(function(){
             var request_id = $(this).data('request-id')
             $.ajax({
                 type: 'POST' ,
-                url: "{% url 'library:accept_borrow_request' %}" ,
+                url: "{% url 'library:borrow_book' %}" ,
                 data : {
                     'request_id': request_id ,
                     'csrfmiddlewaretoken' : "{{ csrf_token }}"
                 } ,
                 
                 success: function(data){
-                    pass
-                }
-            })
+                    if (data.success){
+                        $('#request-' + request_id).remove()
+                    }
+                    else {
+                        console.log(data.error)
+                    }
+                } ,
+            });
+        });
+        $('.reject-borrow').click(function(){
+            var request_id = $(this).data('request-id')
+            $.ajax({
+                type: 'POST' ,
+                url: "{% url 'library:reject_borrow' %}" ,
+                data : {
+                    'request_id': request_id ,
+                    'csrfmiddlewaretoken' : "{{ csrf_token }}"
+                } ,
+                
+                success: function(data){
+                    if (data.success){
+                        $('#request-' + request_id).remove()
+                    }
+                    else {
+                        console.log(data.error)
+                    }
+                } ,
+            });
         });
     });
 </script>
+
+{% endblock %}
