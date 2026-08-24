@@ -9,6 +9,8 @@
             <p>Phone : {{ member.phone }}</p>
         </h3>
         <hr>
+    <h3>Loan List : </h3>
+    <br>
     <table style="width:50%; border-collapse: collapse;">
         <tr>
             <th style="border:2px solid orange;">Row</th>
@@ -19,10 +21,11 @@
             <th style="border:2px solid orange;">Borrow Librarian</th>
             <th style="border:2px solid orange;">Return Librarian</th>
             <th style="border:2px solid orange;">Status</th>
+            <th style="border:2px solid orange;">Return</th>
         </tr>
 
         {% for loan in loans %}
-        <tr>
+        <tr id="loan-{{ loan.id }}">
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid orange;">
                 <a href="{{ loan.book.get_absolute_url }}">{{ loan.book.title }}</a>
@@ -33,10 +36,42 @@
             <td style="border:2px solid orange;"><a href="{{ loan.borrow_librarian.get_absolute_url }}">{{ loan.borrow_librarian }}</a></td>
             <td style="border:2px solid orange;"><a href="{{ loan.return_librarian.get_absolute_url }}">{{ loan.return_librarian }}</a></td>
             <td style="border:2px solid orange;">{{ loan.status }}</td>
+            <td style="border:2px solid orange;">
+                <button class="return-request" data-loan-id="{{ loan.id }}">
+                    Return
+                </button>
+            </td>
         </tr>
         {% endfor %}
     </table>
     <hr>
+    <h3>Request List :</h3>
+    <br>
+    <table style="width:50%; border-collapse: collapse;">
+        <tr>
+            <th style="border:2px solid orange;">Row</th>
+            <th style="border:2px solid orange;">Username</th>
+            <th style="border:2px solid orange;">Book Name</th>
+            <th style="border:2px solid orange;">Request Date</th>
+            <th style="border:2px solid orange;">Request Type</th>
+        </tr>
+
+        {% for request in requests %}
+        <tr>
+            <td style="border:2px solid orange;">{{ forloop.counter }}</td>
+            <td style="border:2px solid orange;">
+                {{ request.user.username }}</a>
+            </td>
+            <td style="border:2px solid orange;"><a href="{{ request.book.get_absolute_url }}">{{ request.book.title }}</a></td>
+            <td style="border:2px solid orange;">{{ request.request_date}}</td>
+            <td style="border:2px solid orange;">{{ request.request_type}}</td>
+            
+        </tr>
+        {% endfor %}
+    </table>
+    <hr>
+    <h3>Comments : </h3>
+    <br>
     <table style="width:50%; border-collapse: collapse;">
         <tr>
             <th style="border:2px solid orange;">Row</th>
@@ -49,7 +84,7 @@
         <tr>
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid rgb(0, 255, 204);">
-                <a href="{{ loan.book.get_absolute_url }}">{{ comment.book.title }}</a>
+                <a href="{{ comment.book.get_absolute_url }}">{{ comment.book.title }}</a>
             </td>
             <td style="border:2px solid rgb(0, 238, 255);">{{ comment.body | truncatewords:4 }}</td>
         </tr>
@@ -62,4 +97,31 @@
         <form action="{% url 'library:logout' %}" method="post">
         {% csrf_token %}
         <button type="submit">Logout</button>
-    {% endblock %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $('.return-request').click(function(){
+            var loan_id = $(this).data('loan-id')
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'library:return_request' %}" ,
+                data: {
+                    'loan_id' : loan_id ,
+                    'csrfmiddlewaretoken' : '{{ csrf_token }}'
+                } ,
+
+                success : function(data){
+                    if (data.success){
+                        $('#loan-' + loan_id).remove()
+                    }
+                    else {
+                        console.log(data.error)
+                    }
+                }
+            })
+        })
+    })
+</script>
+
+{% endblock %}

@@ -16,7 +16,7 @@
         <tr id="request-{{ request.id }}">
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid orange;">
-                {{ request.user.username }}</a>
+                {{ request.user.username }}
             </td>
             <td style="border:2px solid orange;"><a href="{{ request.book.get_absolute_url }}">{{ request.book.title }}</a></td>
             <td style="border:2px solid orange;">{{ request.request_date}}</td>
@@ -46,7 +46,7 @@
         </tr>
 
         {% for request in return_request %}
-        <tr>
+        <tr id="request-{{ request.id }}">
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid orange;">
                 {{ request.user.username }}</a>
@@ -91,6 +91,26 @@
             $.ajax({
                 type: 'POST' ,
                 url: "{% url 'library:reject_borrow' %}" ,
+                data : {
+                    'request_id': request_id ,
+                    'csrfmiddlewaretoken' : "{{ csrf_token }}"
+                } ,
+                
+                success: function(data){
+                    if (data.success){
+                        $('#request-' + request_id).remove()
+                    }
+                    else {
+                        console.log(data.error)
+                    }
+                } ,
+            });
+        });
+        $('.accept-return').click(function(){
+            var request_id = $(this).data('request-id')
+            $.ajax({
+                type: 'POST' ,
+                url: "{% url 'library:return_request_accepting' %}" ,
                 data : {
                     'request_id': request_id ,
                     'csrfmiddlewaretoken' : "{{ csrf_token }}"

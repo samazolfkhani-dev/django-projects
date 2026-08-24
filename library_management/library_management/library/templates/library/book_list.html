@@ -3,8 +3,8 @@
     {% block body %}
         <h1>List Of Books in Horizon Library : </h1>
         {% for book in books %}
-            {% if book.images.first %}
-                <img src="{{ book.images.first.image_file.url }}" width="250" height="250" alt="{{ book.images.first.title }}">
+            {% if book.prefetched_images %}
+                <img src="{{ book.prefetched_images.0.image_file.url }}" width="250" height="250" alt="{{ book.prefetched_images.0.title }}">
             {% endif %}
             <h3><a href="{% url 'library:book_detail' book.id %}">Title : {{ book.title }}</a></h3>
             <p>Author : {{ book.author }}</p>
@@ -20,3 +20,4 @@
         {% endfor %}
     {% include "partials/pagination.html" with page=posts %}
     {% endblock %}
+

@@ -29,7 +29,7 @@ class Category(models.Model):
     updated_at = jmodels.jDateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name
+        return self.get_name_display()
 
 
 class User(AbstractUser):
@@ -140,7 +140,7 @@ class Loan(models.Model):
         RETURNED = 'RT' , 'Returned'
     user = models.ForeignKey(User, on_delete=models.CASCADE , related_name='loans')
     book = models.ForeignKey(Book, on_delete=models.CASCADE , related_name='loans')
-    borrow_date = jmodels.jDateField(auto_now_add = True)
+    borrow_date = jmodels.jDateField()
     due_date = jmodels.jDateField(null = True , blank = True)
     return_date = jmodels.jDateField(null=True , blank=True)
     borrow_librarian = models.ForeignKey(User, on_delete=models.SET_NULL , null=True , related_name='borrowed_loans')
@@ -149,15 +149,6 @@ class Loan(models.Model):
 
     def __str__(self):
         return f"{self.user} -> {self.book}"
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            super().save(*args, **kwargs)
-            self.due_date = self.borrow_date + timedelta(days=30)
-            super().save(update_fields=['due_date'])
-            return
-
-        super().save(*args, **kwargs)
 
 
 def censor_text(text):

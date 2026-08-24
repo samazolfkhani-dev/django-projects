@@ -57,7 +57,7 @@
             </tr>
         </table>
         <br>
-        {% if user.role == "Li" or user.is_superiser %}
+        {% if user.role == "Li" or user.is_superuser %}
             <a href="{% url 'library:delete_book' book.id %}">Delete Book</a>
             <br>
             <a href="{% url 'library:edit_book' book.id %}">Edit Book</a>

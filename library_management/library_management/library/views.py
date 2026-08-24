@@ -13,17 +13,20 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.contrib.postgres.search import SearchVector , SearchQuery , SearchRank , TrigramSimilarity
 from django.views.decorators.http import require_POST
+import jdatetime
+from django.db.models import Prefetch
+from django.contrib import messages
 # Create your views here.
 
 def index(request):
     return render(request, 'library/home.html')
 
 def book_list(request , tag_slug = None):
-    books = Book.objects.all()
+    books = Book.objects.select_related('author' , 'publisher' , 'category').prefetch_related('tags' , Prefetch('images' , to_attr = 'prefetched_images'))
     tag = None
     if tag_slug :
         tag = get_object_or_404(Tag , slug = tag_slug)
-        books = Book.objects.filter(tags__in = [tag])
+        books = books.filter(tags__in = [tag])
     context = {
         'books' : books ,
         'tag' : tag ,
@@ -32,14 +35,14 @@ def book_list(request , tag_slug = None):
 
 
 def book_detail(request, id):
-    book = get_object_or_404(Book, id=id)
+    book = get_object_or_404(Book.objects.select_related('author' , 'publisher' , 'category').prefetch_related('tags' , 'images') , id=id)
     book_tags_ids = book.tags.values_list("id", flat=True)
     similar_books = (
-        Book.objects.filter(tags__in=book_tags_ids)
+        Book.objects.select_related('author').prefetch_related('tags').filter(tags__in=book_tags_ids)
         .exclude(id=book.id)
         .annotate(same_tags=Count("tags"))
         .order_by("-same_tags", "-created_at")[:2])
-    comments = book.comments.all()   
+    comments = book.comments.select_related('user')  
     paginator = Paginator(comments ,4)    
     page_number = request.GET.get("page")
     comments = paginator.get_page(page_number)
@@ -77,13 +80,17 @@ def profile(request):
 
 @login_required
 def member_profile(request):
-    member = get_object_or_404(User , pk=request.user.id)
-    loans = Loan.objects.filter(user=request.user)
-    comments = Comment.objects.filter(user=request.user)
+    member = get_object_or_404(User, pk=request.user.id)
+    loans = Loan.objects.filter(user=request.user , status = Loan.StatusChoices.BORROWED).\
+        select_related('book' , 'borrow_librarian' , 'return_librarian')
+    requests = Request.objects.filter(user = member , status = Request.Status.PENDING).\
+        select_related('book')
+    comments = Comment.objects.filter(user=request.user).select_related('book')
     context = {
         'member': member,
         'loans': loans,
         'comments': comments,
+        'requests' : requests
     }
     return render(request , 'library/member_profile.html' , context)
 
@@ -92,10 +99,12 @@ def member_profile(request):
 @login_required
 def librarian_profile(request):
     librarian = get_object_or_404(User , pk=request.user.id)
-    borrow_loans = Loan.objects.filter(borrow_librarian=request.user)
-    return_loans = Loan.objects.filter(return_librarian=request.user)
-    loans = borrow_loans or return_loans
-    comments = Comment.objects.filter(user=request.user)
+    borrow_loans = Loan.objects.filter(borrow_librarian=request.user).\
+        select_related('book' , 'user')
+    return_loans = Loan.objects.filter(return_librarian=request.user).\
+        select_related('book' , 'user')
+    loans = borrow_loans.union(return_loans)
+    comments = Comment.objects.filter(user=request.user).select_related('book')
     context = {
         'librarian': librarian,
         'loans': loans,
@@ -124,12 +133,12 @@ def member_register(request):
             user.save()
             return render(request , 'registration/register_done.html' , {'user':user })
     else :
-        form = LibrarianRegisterForm()
+        form = MemberRegisterForm()
     return render(request, 'forms/register.html' , {'form':form})
 
 def user_detail(request):
     user = get_object_or_404(User , pk=request.user.id)
-    loans = Loan.objects.filter(user=request.user)
+    loans = Loan.objects.filter(user=request.user).select_related('book' , 'borrow_librarian' , 'return_librarian')
     context = {
         'user': user,
         'loans': loans,
@@ -147,9 +156,7 @@ def ticket(request):
             sent = True
     else:
         form = TicketForm()
-    return render(
-        request,'forms/ticket.html',{'form': form,'sent': sent}
-    )
+    return render(request,'forms/ticket.html',{'form': form,'sent': sent})
 
 
 @login_required
@@ -180,7 +187,6 @@ def add_book(request):
 
 
 def author_list(request):
-    print("1")
     authors = Author.objects.all()
     page = request.GET.get('page')
     paginator = Paginator(authors , 3)
@@ -191,13 +197,13 @@ def author_list(request):
     except EmptyPage :
         authors = []
     if request.GET.get('ajax'):
-        print(":)))))")
         return render(request , 'library/author_list_ajax.html' , {'authors' : authors})
     return render(request , 'library/author_list.html' , {'authors' : authors})
 
 def author_detail(request , id):
     author = get_object_or_404(Author , id = id)
-    return render(request , 'library/author_detail.html' , {'author' : author})
+    books = Book.objects.filter(author = author).select_related('publisher' , 'category')
+    return render(request , 'library/author_detail.html' , {'author' : author , 'books' : books})
 
 
 def publisher_list(request):
@@ -209,7 +215,8 @@ def publisher_list(request):
 
 def publisher_detail(request , id):
     publisher = get_object_or_404(Publisher , id = id)
-    return render(request , 'library/publisher_detail.html' , {'publisher' : publisher})
+    books = Book.objects.filter(publisher = publisher).select_related('category' , 'author')
+    return render(request , 'library/publisher_detail.html' , {'publisher' : publisher , 'books' : books})
 
 @login_required
 def delete_book(request , id):
@@ -221,27 +228,30 @@ def delete_book(request , id):
 
 @login_required
 def edit_book(request , id):
-    book = get_object_or_404(Book , id = id)
-    if request.method == "POST" :
-        form = CreateBookForm(request.POST , request.FILES , instance = book)
-        if form.is_valid():
-            book = form.save()
-            images = [
-                form.cleaned_data.get('image1'),
-                form.cleaned_data.get('image2'),
-                form.cleaned_data.get('image3'),
-                form.cleaned_data.get('image4'),
-            ]
-            for image in images:
-                if image:
-                    Image.objects.create(
-                        image_file=image,
-                        book=book
-                    )
-            return redirect('library:index')
-    else:
-        form = CreateBookForm(instance = book)
-        return render(request,'forms/add_book.html',{'form': form})
+    if request.user.role != User.Role.LIBRARIAN:
+        raise PermissionDenied
+    else :
+        book = get_object_or_404(Book , id = id)
+        if request.method == "POST" :
+            form = CreateBookForm(request.POST , request.FILES , instance = book)
+            if form.is_valid():
+                book = form.save()
+                images = [
+                    form.cleaned_data.get('image1'),
+                    form.cleaned_data.get('image2'),
+                    form.cleaned_data.get('image3'),
+                    form.cleaned_data.get('image4'),
+                ]
+                for image in images:
+                    if image:
+                        Image.objects.create(
+                            image_file=image,
+                            book=book
+                        )
+                return redirect('library:index')
+        else:
+            form = CreateBookForm(instance = book)
+            return render(request,'forms/add_book.html',{'form': form})
 
 
 def search(request):
@@ -316,9 +326,7 @@ def search(request):
                 )
 
                 .select_related(
-                    'author',
-                    'publisher',
-                    'category'
+                    'author'
                 )
 
                 .order_by(
@@ -385,7 +393,7 @@ def author_like(request):
             'likes_count' : author_likes_count
         }
     else :
-        response_data = {'error' : 'Invalid Book Id!'}
+        response_data = {'error' : 'Invalid Author Id!'}
 
     return JsonResponse(response_data)
 
@@ -410,39 +418,44 @@ def publisher_like(request):
             'likes_count' : publisher_likes_count
         }
     else :
-        response_data = {'error' : 'Invalid Book Id!'}
+        response_data = {'error' : 'Invalid Publisher Id!'}
 
     return JsonResponse(response_data)
 
 @login_required
+@require_POST
 def book_request(request):
-    if request.method == "POST" :
-        book_id = request.POST.get('book_id')
-        book = get_object_or_404(Book , id = book_id)
-        already_request = Request.objects.filter(user = request.user , book = book , request_type = Request.RequestType.BORROW).exists()
-        if already_request :
-            return JsonResponse({
-                'success' : False ,
-                'message' : 'You Already Have A Pending Request!'
-            })
-        if not request.user.active :
-            return JsonResponse({
-               'success' : False ,
-                'message' : 'You Are Disabled By Admin Of Site!'
-            })
-        Request.objects.create(user = request.user , book = book , request_type = Request.RequestType.BORROW)
+    book_id = request.POST.get('book_id')
+    book = get_object_or_404(Book , id = book_id)
+    already_borrowed = Loan.objects.filter(user = request.user , book = book , status = Loan.StatusChoices.BORROWED).exists()
+    already_request = Request.objects.filter(user = request.user , book = book , request_type = Request.RequestType.BORROW , status = Request.Status.PENDING).exists()
+    if already_borrowed :
         return JsonResponse({
-            'success' : True
+            'success' : False ,
+            'message' : 'You Already Have This Book!'
         })
+    if already_request :
+        return JsonResponse({
+            'success' : False ,
+            'message' : 'You Already Have A Pending Request!'
+        })
+    if not request.user.is_active :
+        return JsonResponse({
+            'success' : False ,
+            'message' : 'You Are Disabled By Admin Of Site!'
+        })
+    Request.objects.create(user = request.user , book = book , request_type = Request.RequestType.BORROW)
     return JsonResponse({
-        'success' : False
+        'success' : True
     })
 
 @login_required
 def request_list(request):
     if request.user.role == User.Role.LIBRARIAN:
-        borrow_requests = Request.objects.filter(request_type = Request.RequestType.BORROW , status = Request.Status.PENDING)
-        return_requests = Request.objects.filter(request_type = Request.RequestType.RETURN , status = Request.Status.PENDING)
+        borrow_requests = Request.objects.filter(request_type = Request.RequestType.BORROW , status = Request.Status.PENDING).\
+            select_related('book' , 'user')
+        return_requests = Request.objects.filter(request_type = Request.RequestType.RETURN , status = Request.Status.PENDING).\
+            select_related('book' , 'user')
         context ={
             'borrow_request' : borrow_requests ,
             'return_request' : return_requests
@@ -457,19 +470,30 @@ def borrow_book(request) :
     if request.user.role == User.Role.LIBRARIAN :
         librarian = request.user
         request_id = request.POST.get('request_id')
+
         if request_id is None:
             return JsonResponse({'success' : False , 'error' : 'No Such Request!'})
-        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.BORROW)
+        
+        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING ,\
+                             request_type=Request.RequestType.BORROW)
         book = r.book
+
         if book.total_available_copies <= 0 :
                 return JsonResponse({'success' : False , 'error' : 'This Book Is Not Available!'})
-        loan = Loan.objects.create(user = r.user , book = r.book , borrow_librarian = librarian , status = Loan.StatusChoices.BORROWED)
+        
+        loan = Loan.objects.create(user = r.user , book = r.book , borrow_librarian = librarian , status = Loan.StatusChoices.BORROWED ,\
+                                    due_date = jdatetime.date.today() + timedelta(days = 30) ,\
+                                    borrow_date = jdatetime.date.today())
+        
         book.total_available_copies -= 1
         book.save(update_fields=['total_available_copies'])
+
         r.status = Request.Status.APPROVED
         r.librarian = librarian
         r.save(update_fields=['status' , 'librarian'])
+
         return JsonResponse({'success' : True})
+    
     else :
         raise PermissionDenied('Access Denied!')
 
@@ -488,3 +512,52 @@ def reject_borrow(request):
         return JsonResponse({'success' : True})
     else :
         raise PermissionDenied('Access Denied!')
+
+@login_required
+@require_POST
+def return_request(request):
+    loan_id = request.POST.get('loan_id')
+    if loan_id :
+        loan = get_object_or_404(Loan , id = loan_id , user = request.user , status = Loan.StatusChoices.BORROWED)
+        already_request = Request.objects.filter(user = loan.user , book = loan.book , request_type = Request.RequestType.RETURN , status = Request.Status.PENDING).exists()
+        if already_request :
+            return JsonResponse({
+                'success' : False ,
+                'message' : 'You Already Have A Pending Request!'
+            })
+        Request.objects.create(user = loan.user , book = loan.book , request_type = Request.RequestType.RETURN)
+        return JsonResponse({
+            'success' : True
+        })
+    return JsonResponse({
+        'success' : False ,
+        'error' : 'Undefiend Loan!'
+    })
+        
+
+@login_required
+@require_POST
+def return_request_accepting(request):
+    if request.user.role == User.Role.LIBRARIAN :
+        librarian = request.user
+        request_id = request.POST.get('request_id')
+        if request_id is None:
+            return JsonResponse({'success' : False , 'error' : 'No Such Request!'})
+        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.RETURN)
+        book = r.book
+        loan = get_object_or_404(Loan , user = r.user , book = r.book , status = Loan.StatusChoices.BORROWED)
+        loan.status = Loan.StatusChoices.RETURNED
+        loan.return_date = jdatetime.date.today()
+        loan.return_librarian = librarian
+        loan.save(update_fields=['status' , 'return_date' , 'return_librarian'])
+        book.total_available_copies += 1
+        book.save(update_fields=['total_available_copies'])
+        r.status = Request.Status.APPROVED
+        r.librarian = librarian
+        r.save(update_fields=['status' , 'librarian'])
+        return JsonResponse({'success' : True})
+    else :
+        raise PermissionDenied('Access Denied!')
+
+
+    

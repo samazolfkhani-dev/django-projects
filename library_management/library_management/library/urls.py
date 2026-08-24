@@ -40,4 +40,6 @@ urlpatterns = [
     path('request_list/' , views.request_list , name = "request_list") ,
     path('borrow_book/' , views.borrow_book , name = "borrow_book") ,
     path('reject_borrow/' , views.reject_borrow , name = 'reject_borrow'),
+    path('return_request' , views.return_request , name = 'return_request'),
+    path('return_request_accepting' , views.return_request_accepting , name = 'return_request_accepting')
 ]

@@ -12,14 +12,14 @@
         <p>Phone : {{ publisher.phone }}</p>
         <p>Website : {{ publisher.website }}</p>
         <button class="like-button">
-            {% if request.user in book.likes.all %}
+            {% if request.user in = publisher.likes.all %}
                 Unlike
             {% else %}
                 Like
             {% endif %}
         </button>
         <span class="likes-count">
-            {{ book.likes.count }}
+            {{ publisher.likes.count }}
         </span>
     </div>
         <hr>
@@ -33,7 +33,7 @@
             <th style="border:2px solid orange;">Summary</th>
         </tr>
 
-        {% for book in publisher.books.all %}
+        {% for book in books %}
         <tr>
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid orange;">
@@ -42,7 +42,6 @@
             <td style="border:2px solid orange;"><a href="{% url 'library:author_detail' book.author.id %}">{{ book.author }}</a></td>
             <td style="border:2px solid orange;">{{ book.category }}</td>
             <td style="border:2px solid orange;">{{ book.description | truncatewords:3 }} ...</td>
-            <td style="border:2px solid orange;"><a href="{{ loan.borrow_librarian.get_absolute_url }}">{{ loan.borrow_librarian }}</a></td>
         {% endfor %}
     </table>
 

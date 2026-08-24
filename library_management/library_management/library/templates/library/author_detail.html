@@ -34,7 +34,7 @@
             <th style="border:2px solid orange;">Summary</th>
         </tr>
 
-        {% for book in author.books.all %}
+        {% for book in books %}
         <tr>
             <td style="border:2px solid orange;">{{ forloop.counter }}</td>
             <td style="border:2px solid orange;">
@@ -43,7 +43,6 @@
             <td style="border:2px solid orange;"><a href="{% url 'library:publisher_detail' book.publisher.id %}">{{ book.publisher }}</a></td>
             <td style="border:2px solid orange;">{{ book.category }}</td>
             <td style="border:2px solid orange;">{{ book.description | truncatewords:3 }} ...</td>
-            <td style="border:2px solid orange;"><a href="{{ loan.borrow_librarian.get_absolute_url }}">{{ loan.borrow_librarian }}</a></td>
         {% endfor %}
     </table>
 
