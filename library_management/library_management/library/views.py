@@ -27,6 +27,14 @@ def book_list(request , tag_slug = None):
     if tag_slug :
         tag = get_object_or_404(Tag , slug = tag_slug)
         books = books.filter(tags__in = [tag])
+    page = request.GET.get('page')
+    paginator = Paginator(books , 3)
+    try :
+        books = paginator.page(page)
+    except PageNotAnInteger :
+        books = paginator.page(1)
+    except EmptyPage :
+        books = paginator.page(1)
     context = {
         'books' : books ,
         'tag' : tag ,
@@ -66,6 +74,7 @@ def book_comment(request, id):
             comment.book = book
             comment.user = request.user
             comment.save()
+            messages.success(request , "Your Comment Has Been Submitted!")
     return redirect("library:book_detail", id=book.id)
 
 
@@ -119,6 +128,7 @@ def librarian_register(request):
             user = form.save(commit = False)
             user.set_password(form.cleaned_data['password'])
             user.save()
+            messages.success(request , "Your Information Has Been Successfully Submitted!")
             return render(request , 'registration/register_done.html' , {'user':user })
     else :
         form = LibrarianRegisterForm()
@@ -131,6 +141,7 @@ def member_register(request):
             user = form.save(commit = False)
             user.set_password(form.cleaned_data['password'])
             user.save()
+            messages.success(request , "Your Information Has Been Successfully Submitted!")
             return render(request , 'registration/register_done.html' , {'user':user })
     else :
         form = MemberRegisterForm()
@@ -154,6 +165,7 @@ def ticket(request):
             message = f"{cd['name']}\n{cd['email']}\n\n{cd['message']}"
             send_mail(cd['subject'],message,'samazolfkhani12@gmail.com',['samazolfkhani12@gmail.com'] , fail_silently=False)
             sent = True
+            messages.success(request , "Your Ticket Has Been Successfully Sent To Supports!")
     else:
         form = TicketForm()
     return render(request,'forms/ticket.html',{'form': form,'sent': sent})
@@ -180,6 +192,7 @@ def add_book(request):
                         image_file=image,
                         book=book
                     )
+            messages.success(request , "The Book Has Been Successfully Added!")
             return redirect('library:index')
     else:
         form = CreateBookForm()
@@ -223,6 +236,7 @@ def delete_book(request , id):
     book = get_object_or_404(Book , id = id)
     if request.method == "POST" :
         book.delete()
+        messages.success(request , "The Book Has Been Successfully Deleted!")
         return redirect('library:book_list')
     return render(request ,'forms/delete_book.html' , {'book' : book})
 
@@ -248,6 +262,7 @@ def edit_book(request , id):
                             image_file=image,
                             book=book
                         )
+                messages.success(request , "The Book Has Been Successfully Edited!")
                 return redirect('library:index')
         else:
             form = CreateBookForm(instance = book)
@@ -432,21 +447,26 @@ def book_request(request):
     if already_borrowed :
         return JsonResponse({
             'success' : False ,
-            'message' : 'You Already Have This Book!'
+            'message' : 'You Already Have This Book!' ,
+            'message_type' : 'warning'
         })
     if already_request :
         return JsonResponse({
             'success' : False ,
-            'message' : 'You Already Have A Pending Request!'
+            'message' : 'You Already Have A Pending Request!' ,
+            'message_type' : 'warning'
         })
     if not request.user.is_active :
         return JsonResponse({
             'success' : False ,
-            'message' : 'You Are Disabled By Admin Of Site!'
+            'message' : 'You Are Disabled By Admin Of Site!',
+            'message_type' : 'error'
         })
     Request.objects.create(user = request.user , book = book , request_type = Request.RequestType.BORROW)
     return JsonResponse({
-        'success' : True
+        'success' : True ,
+        'message' : 'The Request Has Been Successfully Added!',
+        'message_type' : 'success'
     })
 
 @login_required
@@ -472,14 +492,14 @@ def borrow_book(request) :
         request_id = request.POST.get('request_id')
 
         if request_id is None:
-            return JsonResponse({'success' : False , 'error' : 'No Such Request!'})
+            return JsonResponse({'success' : False , 'message' : 'No Such Request!' , 'message_type' : 'error'})
         
         r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING ,\
                              request_type=Request.RequestType.BORROW)
         book = r.book
 
         if book.total_available_copies <= 0 :
-                return JsonResponse({'success' : False , 'error' : 'This Book Is Not Available!'})
+                return JsonResponse({'success' : False , 'message' : 'This Book Is Not Available!' , 'message_type' : 'warning'})
         
         loan = Loan.objects.create(user = r.user , book = r.book , borrow_librarian = librarian , status = Loan.StatusChoices.BORROWED ,\
                                     due_date = jdatetime.date.today() + timedelta(days = 30) ,\
@@ -491,8 +511,7 @@ def borrow_book(request) :
         r.status = Request.Status.APPROVED
         r.librarian = librarian
         r.save(update_fields=['status' , 'librarian'])
-
-        return JsonResponse({'success' : True})
+        return JsonResponse({'success' : True , 'message' : 'The Request Has Been Successfully Submitted!' , 'message_type' : 'success'})
     
     else :
         raise PermissionDenied('Access Denied!')
@@ -504,12 +523,12 @@ def reject_borrow(request):
         librarian = request.user
         request_id = request.POST.get('request_id')
         if request_id is None:
-            return JsonResponse({'success' : False , 'error' : 'No Such Request!'})
+            return JsonResponse({'success' : False , 'message' : 'No Such Request!' , 'message_type' : 'error'})
         r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.BORROW)
         r.status = Request.Status.REJECTED
         r.librarian = librarian
         r.save(update_fields=['status' , 'librarian'])
-        return JsonResponse({'success' : True})
+        return JsonResponse({'success' : True ,  'message' : 'The Request Has Been Successfully Rejected!' , 'message_type' : 'success'})
     else :
         raise PermissionDenied('Access Denied!')
 
@@ -523,15 +542,19 @@ def return_request(request):
         if already_request :
             return JsonResponse({
                 'success' : False ,
-                'message' : 'You Already Have A Pending Request!'
+                'message' : 'You Already Have A Pending Request!' ,
+                'message_type' : 'warning'
             })
         Request.objects.create(user = loan.user , book = loan.book , request_type = Request.RequestType.RETURN)
         return JsonResponse({
-            'success' : True
+            'success' : True ,
+            'message' : 'The Request Has Been Successfully Sent!' ,
+            'message_type' : 'success'
         })
     return JsonResponse({
         'success' : False ,
-        'error' : 'Undefiend Loan!'
+        'Message' : 'Undefiend Loan!' ,
+        'message_type' : 'erro'
     })
         
 
@@ -542,7 +565,7 @@ def return_request_accepting(request):
         librarian = request.user
         request_id = request.POST.get('request_id')
         if request_id is None:
-            return JsonResponse({'success' : False , 'error' : 'No Such Request!'})
+            return JsonResponse({'success' : False , 'message' : 'No Such Request!' , 'message_type' : 'error'})
         r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.RETURN)
         book = r.book
         loan = get_object_or_404(Loan , user = r.user , book = r.book , status = Loan.StatusChoices.BORROWED)
@@ -555,7 +578,7 @@ def return_request_accepting(request):
         r.status = Request.Status.APPROVED
         r.librarian = librarian
         r.save(update_fields=['status' , 'librarian'])
-        return JsonResponse({'success' : True})
+        return JsonResponse({'success' : True , 'message' : 'The Book Has Been Successfully Returned!' , 'message_type' : 'success'})
     else :
         raise PermissionDenied('Access Denied!')
 

@@ -1,15 +1,786 @@
 {% load static %}
-<DOCTYPE html>
-    <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <title>{% block title %}{% endblock %}</title>
-            {% block header %}{% endblock %}
-        </head>
-        {% include 'partials/header.html' %}
-        <body>
-            {% block body %}
-            {% endblock %}
-        </body>
 
-    </html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}{% endblock %}</title>
+
+    {% block header %}{% endblock %}
+
+
+    <style>
+
+        /* DJANGO + AJAX MESSAGE SYSTEM */
+
+        .messages-container {
+
+            position: fixed;
+
+            top: 25px;
+            right: 25px;
+
+            width: 380px;
+            max-width: calc(100vw - 30px);
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 12px;
+
+            z-index: 999999;
+
+            pointer-events: none;
+
+        }
+
+
+        /* MESSAGE TOAST */
+
+        .message-toast {
+
+            position: relative;
+
+            display: flex;
+            align-items: center;
+
+            gap: 14px;
+
+            width: 100%;
+            min-height: 72px;
+
+            padding: 15px 16px;
+
+            box-sizing: border-box;
+
+            border-radius: 18px;
+
+            background:
+
+                linear-gradient(
+                    135deg,
+                    rgba(31, 31, 39, 0.97),
+                    rgba(15, 15, 21, 0.97)
+                );
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            border: 1px solid rgba(255, 255, 255, 0.08);
+
+            box-shadow:
+
+                0 20px 50px rgba(0, 0, 0, 0.35),
+
+                0 5px 15px rgba(0, 0, 0, 0.18),
+
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+            color: white;
+
+            overflow: hidden;
+
+            pointer-events: auto;
+
+            animation:
+
+                messageSlideIn
+                0.45s
+                cubic-bezier(.22, 1, .36, 1);
+
+        }
+
+
+        /* ICON */
+
+        .message-icon {
+
+            width: 42px;
+            height: 42px;
+
+            min-width: 42px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            font-size: 19px;
+
+            font-weight: 700;
+
+            border: 1px solid rgba(255, 255, 255, 0.06);
+
+        }
+
+
+        /* TEXT */
+
+        .message-text {
+
+            flex: 1;
+
+            font-family:
+
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+
+            font-size: 14px;
+
+            font-weight: 500;
+
+            line-height: 1.55;
+
+            color: rgba(255, 255, 255, 0.94);
+
+            word-break: break-word;
+
+        }
+
+
+        /* CLOSE BUTTON */
+
+        .message-close {
+
+            width: 28px;
+            height: 28px;
+
+            min-width: 28px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border: none;
+
+            background: transparent;
+
+            color: rgba(255, 255, 255, 0.45);
+
+            font-size: 21px;
+
+            line-height: 1;
+
+            cursor: pointer;
+
+            border-radius: 50%;
+
+            transition:
+
+                color 0.2s ease,
+                background 0.2s ease,
+                transform 0.2s ease;
+
+        }
+
+
+        .message-close:hover {
+
+            color: white;
+
+            background: rgba(255, 255, 255, 0.08);
+
+            transform: rotate(90deg);
+
+        }
+
+
+        /* SUCCESS */
+
+        .message-success {
+
+            border-left: 4px solid #22c55e;
+
+        }
+
+
+        .message-success .message-icon {
+
+            background: rgba(34, 197, 94, 0.13);
+
+            color: #4ade80;
+
+            box-shadow:
+
+                0 0 25px rgba(34, 197, 94, 0.16);
+
+        }
+
+
+        .message-success .message-progress {
+
+            background: #22c55e;
+
+        }
+
+
+        /* ERROR */
+
+        .message-error {
+
+            border-left: 4px solid #ef4444;
+
+        }
+
+
+        .message-error .message-icon {
+
+            background: rgba(239, 68, 68, 0.13);
+
+            color: #f87171;
+
+            box-shadow:
+
+                0 0 25px rgba(239, 68, 68, 0.16);
+
+        }
+
+
+        .message-error .message-progress {
+
+            background: #ef4444;
+
+        }
+
+
+        /* WARNING */
+
+        .message-warning {
+
+            border-left: 4px solid #f59e0b;
+
+        }
+
+
+        .message-warning .message-icon {
+
+            background: rgba(245, 158, 11, 0.13);
+
+            color: #fbbf24;
+
+            box-shadow:
+
+                0 0 25px rgba(245, 158, 11, 0.16);
+
+        }
+
+
+        .message-warning .message-progress {
+
+            background: #f59e0b;
+
+        }
+
+
+        /* INFO */
+
+        .message-info {
+
+            border-left: 4px solid #3b82f6;
+
+        }
+
+
+        .message-info .message-icon {
+
+            background: rgba(59, 130, 246, 0.13);
+
+            color: #60a5fa;
+
+            box-shadow:
+
+                0 0 25px rgba(59, 130, 246, 0.16);
+
+        }
+
+
+        .message-info .message-progress {
+
+            background: #3b82f6;
+
+        }
+
+
+        /* PROGRESS BAR */
+
+        .message-progress {
+
+            position: absolute;
+
+            left: 0;
+            bottom: 0;
+
+            width: 100%;
+            height: 3px;
+
+            transform-origin: left;
+
+            animation:
+
+                messageProgress
+                5s
+                linear
+                forwards;
+
+        }
+
+
+        /* ANIMATION - SLIDE IN */
+
+        @keyframes messageSlideIn {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+
+                    translateX(100px)
+                    scale(0.94);
+
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+
+                    translateX(0)
+                    scale(1);
+
+            }
+
+        }
+
+
+        /* ANIMATION - FADE OUT */
+
+        @keyframes messageFadeOut {
+
+            from {
+
+                opacity: 1;
+
+                transform:
+
+                    translateX(0)
+                    scale(1);
+
+            }
+
+            to {
+
+                opacity: 0;
+
+                transform:
+
+                    translateX(100px)
+                    scale(0.94);
+
+            }
+
+        }
+
+
+        /* PROGRESS ANIMATION */
+
+        @keyframes messageProgress {
+
+            from {
+
+                transform: scaleX(1);
+
+            }
+
+            to {
+
+                transform: scaleX(0);
+
+            }
+
+        }
+
+
+        /* MOBILE */
+
+        @media (max-width: 600px) {
+
+            .messages-container {
+
+                top: 15px;
+
+                left: 15px;
+                right: 15px;
+
+                width: auto;
+
+                max-width: none;
+
+            }
+
+
+            .message-toast {
+
+                min-height: 68px;
+
+                padding: 13px 14px;
+
+                border-radius: 16px;
+
+            }
+
+
+            .message-icon {
+
+                width: 38px;
+                height: 38px;
+
+                min-width: 38px;
+
+                font-size: 17px;
+
+            }
+
+
+            .message-text {
+
+                font-size: 13px;
+
+            }
+
+        }
+
+
+        /* REDUCED MOTION */
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .message-toast {
+
+                animation: none;
+
+            }
+
+            .message-progress {
+
+                animation: none;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+{% include 'partials/header.html' %}
+
+
+<body>
+
+
+    <!-- MESSAGE CONTAINER-->
+
+    <div
+        class="messages-container"
+        id="messages-container"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+
+
+        <!-- MESSAGE CONTAINER -->
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div
+                    class="message-toast message-{{ message.tags }}"
+                    role="alert"
+                >
+
+
+                    <!-- ICON -->
+
+                    <div class="message-icon">
+
+                        {% if message.tags == "success" %}
+
+                            ✓
+
+                        {% elif message.tags == "error" %}
+
+                            !
+
+                        {% elif message.tags == "warning" %}
+
+                            !
+
+                        {% elif message.tags == "info" %}
+
+                            i
+
+                        {% else %}
+
+                            •
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- MESSAGE TEXT -->
+
+                    <div class="message-text">
+
+                        {{ message }}
+
+                    </div>
+
+
+                    <!-- CLOSE -->
+
+                    <button
+                        type="button"
+                        class="message-close"
+                        onclick="closeMessage(this)"
+                        aria-label="Close message"
+                    >
+
+                        ×
+
+                    </button>
+
+
+                    <!-- PROGRESS -->
+
+                    <div class="message-progress"></div>
+
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- PAGE CONTENT -->
+
+    {% block body %}
+
+    {% endblock %}
+
+
+    <!-- MESSAGE JAVASCRIPT-->
+
+    <script>
+
+
+        /* SHOW MESSAGE */
+
+        function showMessage(message, type = "info") {
+
+
+            const container =
+                document.getElementById("messages-container");
+
+
+            if (!container) {
+
+                return;
+
+            }
+
+
+            /* Create Toast */
+
+            const toast =
+                document.createElement("div");
+
+
+            toast.className =
+                "message-toast message-" + type;
+
+
+            toast.setAttribute(
+                "role",
+                "alert"
+            );
+
+
+            /* Select Icon */
+
+            let icon = "•";
+
+
+            if (type === "success") {
+
+                icon = "✓";
+
+            }
+
+            else if (type === "error") {
+
+                icon = "!";
+
+            }
+
+            else if (type === "warning") {
+
+                icon = "!";
+
+            }
+
+            else if (type === "info") {
+
+                icon = "i";
+
+            }
+
+
+            /* Create Toast HTML */
+
+            toast.innerHTML = `
+
+                <div class="message-icon">
+
+                    ${icon}
+
+                </div>
+
+
+                <div class="message-text">
+
+                    ${message}
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="message-close"
+                    onclick="closeMessage(this)"
+                    aria-label="Close message"
+                >
+
+                    ×
+
+                </button>
+
+
+                <div class="message-progress"></div>
+
+            `;
+
+
+            /* Add Toast To Container */
+
+            container.appendChild(toast);
+
+
+            /* Automatically Remove After 5 Seconds */
+
+            setTimeout(function() {
+
+                removeMessage(toast);
+
+            }, 5000);
+
+        }
+
+
+        /* CLOSE MESSAGE */
+
+        function closeMessage(button) {
+
+
+            const message =
+                button.closest(".message-toast");
+
+
+            removeMessage(message);
+
+        }
+
+
+        /* REMOVE MESSAGE */
+
+        function removeMessage(message) {
+
+
+            if (!message) {
+
+                return;
+
+            }
+
+            if (
+                message.dataset.removing === "true"
+            ) {
+
+                return;
+
+            }
+
+
+            message.dataset.removing = "true";
+
+
+            /* Animation */
+
+            message.style.animation =
+                "messageFadeOut 0.3s ease forwards";
+
+
+            /* Remove From DOM */
+
+            setTimeout(function() {
+
+                message.remove();
+
+            }, 300);
+
+        }
+
+
+        /* AUTO REMOVE DJANGO MESSAGES */
+
+        document
+            .querySelectorAll(".message-toast")
+            .forEach(function(message) {
+
+
+                setTimeout(function() {
+
+                    removeMessage(message);
+
+                }, 5000);
+
+
+            });
+
+
+    </script>
+
+
+</body>
+
+</html>

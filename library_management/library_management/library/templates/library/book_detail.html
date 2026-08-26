@@ -142,10 +142,11 @@ $(document).ready(function() {
             success: function(data){
                 if (data.success) {
                     button.text('In Progress');
-                    button.prop('disabled' , true)
+                    button.prop('disabled' , true) ;
+                    showMessage(data.message , data.message_type)
                 }
                 else {
-                    alert(data.message)
+                    showMessage(data.message , data.message_type)
                 }
             },
 
@@ -156,4 +157,5 @@ $(document).ready(function() {
     });
 });
 </script>
+
 {% endblock %}

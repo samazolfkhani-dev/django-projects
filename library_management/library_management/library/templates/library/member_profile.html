@@ -114,9 +114,10 @@
                 success : function(data){
                     if (data.success){
                         $('#loan-' + loan_id).remove()
+                        showMessage(data.message , data.message_type)
                     }
                     else {
-                        console.log(data.error)
+                        showMessage(data.message , data.message_type)
                     }
                 }
             })
