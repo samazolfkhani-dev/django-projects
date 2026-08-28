@@ -82,7 +82,7 @@ class Book(models.Model):
     author = models.ForeignKey(Author, on_delete=models.CASCADE , related_name='books')
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE , related_name='books')
     category = models.ForeignKey(Category, on_delete=models.CASCADE , related_name='books')
-    isbn = models.CharField(max_length = 100)
+    isbn = models.CharField(max_length = 100 , unique = True)
     description = models.TextField()
     publication_date = jmodels.jDateField()
     pages = models.IntegerField()
@@ -128,6 +128,14 @@ class Request(models.Model):
 
         indexes = [
             models.Index(fields = ['request_date' , 'status']),
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields = ['user' , 'book'] ,
+                condition = models.Q(status='PE') ,
+                name='unique_pending_request_per_user_book'
+            ) 
         ]
 
     def __str__(self):

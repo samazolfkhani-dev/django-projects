@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 import jdatetime
 from django.db.models import Prefetch
 from django.contrib import messages
+from django.db import transaction
 # Create your views here.
 
 def index(request):
@@ -232,22 +233,40 @@ def publisher_detail(request , id):
     return render(request , 'library/publisher_detail.html' , {'publisher' : publisher , 'books' : books})
 
 @login_required
-def delete_book(request , id):
-    book = get_object_or_404(Book , id = id)
-    if request.method == "POST" :
-        book.delete()
-        messages.success(request , "The Book Has Been Successfully Deleted!")
+def delete_book(request, id):
+    if not request.user.role == User.Role.LIBRARIAN :
+        raise PermissionDenied
+    if request.method == "POST":
+        with transaction.atomic():
+            book = Book.objects.select_for_update().get(id=id)
+            if book.loans.filter(
+                status=Loan.StatusChoices.BORROWED
+            ).exists():
+                messages.error(
+                    request,
+                    "You Can't Delete This Book!"
+                )
+                return redirect('library:book_list')
+            book.delete()
+        messages.success(
+            request,
+            "The Book Has Been Successfully Deleted!"
+        )
         return redirect('library:book_list')
-    return render(request ,'forms/delete_book.html' , {'book' : book})
+    book = get_object_or_404(Book, id=id)
+    return render(request,'forms/delete_book.html',{'book': book})
+
+from django.db import transaction
+
 
 @login_required
-def edit_book(request , id):
+def edit_book(request, id):
     if request.user.role != User.Role.LIBRARIAN:
         raise PermissionDenied
-    else :
-        book = get_object_or_404(Book , id = id)
-        if request.method == "POST" :
-            form = CreateBookForm(request.POST , request.FILES , instance = book)
+    if request.method == "POST":
+        with transaction.atomic():
+            book = Book.objects.select_for_update().get(id = id)
+            form = CreateBookForm(request.POST , request.FILES , instance=book)
             if form.is_valid():
                 book = form.save()
                 images = [
@@ -258,15 +277,13 @@ def edit_book(request , id):
                 ]
                 for image in images:
                     if image:
-                        Image.objects.create(
-                            image_file=image,
-                            book=book
-                        )
-                messages.success(request , "The Book Has Been Successfully Edited!")
-                return redirect('library:index')
-        else:
-            form = CreateBookForm(instance = book)
-            return render(request,'forms/add_book.html',{'form': form})
+                        Image.objects.create(image_file=image,book=book)
+        messages.success(request , "The Book Has Been Successfully Edited!")
+        return redirect('library:index')
+    else:
+        book = get_object_or_404(Book, id=id)
+        form = CreateBookForm(instance=book)
+    return render(request , 'forms/add_book.html' , {'form': form})
 
 
 def search(request):
@@ -371,10 +388,10 @@ def book_like(request):
         book = get_object_or_404(Book , id = book_id)
         user = request.user
 
-        if user in book.likes.all():
+        if book.likes.filter(id=user.id).exists():
             book.likes.remove(user)
             liked = False
-        else :
+        else:
             book.likes.add(user)
             liked = True
         book_likes_count = book.likes.count()
@@ -441,7 +458,7 @@ def publisher_like(request):
 @require_POST
 def book_request(request):
     book_id = request.POST.get('book_id')
-    book = get_object_or_404(Book , id = book_id)
+    book = Book.objects.get(id = book_id)
     already_borrowed = Loan.objects.filter(user = request.user , book = book , status = Loan.StatusChoices.BORROWED).exists()
     already_request = Request.objects.filter(user = request.user , book = book , request_type = Request.RequestType.BORROW , status = Request.Status.PENDING).exists()
     if already_borrowed :
@@ -455,7 +472,7 @@ def book_request(request):
             'success' : False ,
             'message' : 'You Already Have A Pending Request!' ,
             'message_type' : 'warning'
-        })
+            })
     if not request.user.is_active :
         return JsonResponse({
             'success' : False ,
@@ -490,27 +507,27 @@ def borrow_book(request) :
     if request.user.role == User.Role.LIBRARIAN :
         librarian = request.user
         request_id = request.POST.get('request_id')
-
+        
         if request_id is None:
             return JsonResponse({'success' : False , 'message' : 'No Such Request!' , 'message_type' : 'error'})
-        
-        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING ,\
+        with transaction.atomic() :
+            r = Request.objects.select_for_update().get(id = request_id , status = Request.Status.PENDING ,\
                              request_type=Request.RequestType.BORROW)
-        book = r.book
+            book = Book.objects.select_for_update().get(id = r.book.id)
 
-        if book.total_available_copies <= 0 :
+            if book.total_available_copies <= 0 :
                 return JsonResponse({'success' : False , 'message' : 'This Book Is Not Available!' , 'message_type' : 'warning'})
         
-        loan = Loan.objects.create(user = r.user , book = r.book , borrow_librarian = librarian , status = Loan.StatusChoices.BORROWED ,\
+            loan = Loan.objects.create(user = r.user , book = r.book , borrow_librarian = librarian , status = Loan.StatusChoices.BORROWED ,\
                                     due_date = jdatetime.date.today() + timedelta(days = 30) ,\
                                     borrow_date = jdatetime.date.today())
         
-        book.total_available_copies -= 1
-        book.save(update_fields=['total_available_copies'])
+            book.total_available_copies -= 1
+            book.save(update_fields=['total_available_copies'])
 
-        r.status = Request.Status.APPROVED
-        r.librarian = librarian
-        r.save(update_fields=['status' , 'librarian'])
+            r.status = Request.Status.APPROVED
+            r.librarian = librarian
+            r.save(update_fields=['status' , 'librarian'])
         return JsonResponse({'success' : True , 'message' : 'The Request Has Been Successfully Submitted!' , 'message_type' : 'success'})
     
     else :
@@ -524,10 +541,11 @@ def reject_borrow(request):
         request_id = request.POST.get('request_id')
         if request_id is None:
             return JsonResponse({'success' : False , 'message' : 'No Such Request!' , 'message_type' : 'error'})
-        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.BORROW)
-        r.status = Request.Status.REJECTED
-        r.librarian = librarian
-        r.save(update_fields=['status' , 'librarian'])
+        with transaction.atomic() :
+            r = Request.objects.select_for_update().get(id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.BORROW)
+            r.status = Request.Status.REJECTED
+            r.librarian = librarian
+            r.save(update_fields=['status' , 'librarian'])
         return JsonResponse({'success' : True ,  'message' : 'The Request Has Been Successfully Rejected!' , 'message_type' : 'success'})
     else :
         raise PermissionDenied('Access Denied!')
@@ -566,18 +584,19 @@ def return_request_accepting(request):
         request_id = request.POST.get('request_id')
         if request_id is None:
             return JsonResponse({'success' : False , 'message' : 'No Such Request!' , 'message_type' : 'error'})
-        r = get_object_or_404(Request , id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.RETURN)
-        book = r.book
-        loan = get_object_or_404(Loan , user = r.user , book = r.book , status = Loan.StatusChoices.BORROWED)
-        loan.status = Loan.StatusChoices.RETURNED
-        loan.return_date = jdatetime.date.today()
-        loan.return_librarian = librarian
-        loan.save(update_fields=['status' , 'return_date' , 'return_librarian'])
-        book.total_available_copies += 1
-        book.save(update_fields=['total_available_copies'])
-        r.status = Request.Status.APPROVED
-        r.librarian = librarian
-        r.save(update_fields=['status' , 'librarian'])
+        with transaction.atomic():
+            r = Request.objects.select_for_update().get(id = request_id , status = Request.Status.PENDING , request_type=Request.RequestType.RETURN)
+            book = Book.objects.select_for_update().get(id = r.book.id)
+            loan = Loan.objects.select_for_update().get(user = r.user , book_id=r.book_id , status = Loan.StatusChoices.BORROWED)
+            loan.status = Loan.StatusChoices.RETURNED
+            loan.return_date = jdatetime.date.today()
+            loan.return_librarian = librarian
+            loan.save(update_fields=['status' , 'return_date' , 'return_librarian'])
+            book.total_available_copies += 1
+            book.save(update_fields=['total_available_copies'])
+            r.status = Request.Status.APPROVED
+            r.librarian = librarian
+            r.save(update_fields=['status' , 'librarian'])
         return JsonResponse({'success' : True , 'message' : 'The Book Has Been Successfully Returned!' , 'message_type' : 'success'})
     else :
         raise PermissionDenied('Access Denied!')
