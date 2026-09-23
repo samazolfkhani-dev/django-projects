@@ -32,3 +32,6 @@ The goal of this repository is to document my progress in building independent D
 * PostgreSQL
 * Git & GitHub
 * Linux
+
+## Site Preview
+![Home Page](library_management/Screenshot from 2026-09-23 09-42-39.png)
